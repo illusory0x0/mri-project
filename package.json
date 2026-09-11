@@ -1,0 +1,19 @@
+{
+  "name": "lisp-editor",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Stateless structural editor for a Lisp subset",
+  "bin": {
+    "lisp-editor": "./dist/src/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test dist/test/*.test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
