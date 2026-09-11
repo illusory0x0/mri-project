@@ -1,0 +1,7 @@
+{
+  "id": "t02-let-square",
+  "nesting": 4,
+  "instruction": "Bind the expression (* x x) to a local variable y using let, and use y in its place.",
+  "input": "(define (square x) (+ 0 (+ 0 (* x x))))",
+  "expected": "(define (square x) (+ 0 (+ 0 (let ((y (* x x))) y))))"
+}

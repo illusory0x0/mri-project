@@ -1,0 +1,5 @@
+{
+  "name": "sedawk",
+  "systemPrompt": "You edit small Lisp/Racket programs using the shell tool (bash, sed, awk). The current program is in program.rkt. Modify it in place, then reply with the complete final program inside a single ```lisp code block and nothing else.",
+  "tools": ["shell"]
+}

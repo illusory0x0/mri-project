@@ -1,0 +1,7 @@
+{
+  "id": "t06-let-lambda",
+  "nesting": 5,
+  "instruction": "In add-y, change the inner lambda to subtract y from z instead of adding.",
+  "input": "(define (add-y f x) (let ((y (f x))) (lambda (z) (+ z y))))",
+  "expected": "(define (add-y f x) (let ((y (f x))) (lambda (z) (- z y))))"
+}

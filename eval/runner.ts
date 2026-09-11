@@ -1,0 +1,165 @@
+import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
+import os from "node:os";
+import path from "node:path";
+import { runProcess } from "./process.js";
+import { scoreArtifact } from "./scorer.js";
+import { TOOL_SPECS } from "./tools.js";
+import {
+  AgentDriver,
+  Arm,
+  ARM_NAMES,
+  ArmSummary,
+  RunResult,
+  Task,
+  ToolContext,
+  ToolSpec,
+  Workspace,
+} from "./types.js";
+
+const CLI = path.resolve(process.cwd(), "dist/src/cli.js");
+
+async function execShell(command: string, workspace: Workspace): Promise<string> {
+  const dir = await mkdtemp(path.join(os.tmpdir(), "lisp-editor-eval-"));
+  try {
+    const file = path.join(dir, "program.rkt");
+    await writeFile(file, workspace.source, "utf8");
+    const result = await runProcess("bash", ["-c", command], { cwd: dir });
+    workspace.source = await readFile(file, "utf8");
+    return JSON.stringify({
+      code: result.code,
+      stdout: result.stdout,
+      stderr: result.stderr,
+    });
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
+}
+
+export function buildToolContext(workspace: Workspace): ToolContext {
+  return {
+    async exec(name, input) {
+      if (name === "lisp_editor") {
+        const args = (input as { args?: unknown }).args;
+        if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) {
+          return JSON.stringify({ ok: false, error: "args must be strings" });
+        }
+        const result = await runProcess(process.execPath, [CLI, ...(args as string[])], {
+          input: workspace.source,
+        });
+        if (result.code !== 0) {
+          return JSON.stringify({ ok: false, error: result.stderr.trim() });
+        }
+        if (args[0] === "replace") {
+          workspace.source = result.stdout;
+          return JSON.stringify({ ok: true, source: result.stdout });
+        }
+        return JSON.stringify({ ok: true, output: result.stdout });
+      }
+      if (name === "shell") {
+        const command = (input as { command?: unknown }).command;
+        if (typeof command !== "string") {
+          return JSON.stringify({ ok: false, error: "command must be a string" });
+        }
+        return execShell(command, workspace);
+      }
+      return JSON.stringify({ ok: false, error: `unknown tool: ${name}` });
+    },
+  };
+}
+
+export interface RunMeta {
+  model?: string;
+  temperature?: number;
+}
+
+export async function runOne(
+  driver: AgentDriver,
+  arm: Arm,
+  task: Task,
+  seed: number,
+  meta: RunMeta = {}
+): Promise<RunResult> {
+  const workspace: Workspace = { source: task.input };
+  const ctx = buildToolContext(workspace);
+  const tools: ToolSpec[] = arm.tools.map((name) => {
+    const spec = TOOL_SPECS[name];
+    if (!spec) throw new Error(`unknown tool spec: ${name}`);
+    return spec;
+  });
+
+  const result = await driver.run({ arm, task, tools, ctx, seed });
+  const finalArtifact =
+    arm.tools.length === 0
+      ? result.finalArtifact ?? workspace.source
+      : workspace.source;
+  const score = await scoreArtifact(finalArtifact, task.expected);
+
+  return {
+    taskId: task.id,
+    nesting: task.nesting,
+    arm: arm.name,
+    seed,
+    model: meta.model,
+    temperature: meta.temperature,
+    parsed: score.parsed,
+    parenMismatch: score.parenMismatch,
+    evaluates: score.evaluates,
+    success: score.success,
+    parseError: score.error,
+    steps: result.steps,
+    tokens: result.tokens,
+    finalArtifact,
+    transcript: result.transcript,
+  };
+}
+
+export async function loadJsonDir<T>(
+  dir: string,
+  include: (name: string) => boolean = () => true
+): Promise<T[]> {
+  const names = (await readdir(dir))
+    .filter((name) => name.endsWith(".json") && include(name))
+    .sort();
+  return Promise.all(
+    names.map(async (name) => {
+      const text = await readFile(path.join(dir, name), "utf8");
+      return JSON.parse(text) as T;
+    })
+  );
+}
+
+export function loadTasks(
+  dir = path.resolve(process.cwd(), "eval/tasks")
+): Promise<Task[]> {
+  return loadJsonDir<Task>(dir);
+}
+
+export function loadArms(
+  dir = path.resolve(process.cwd(), "eval/arms")
+): Promise<Arm[]> {
+  return loadJsonDir<Arm>(dir);
+}
+
+export function summarize(results: RunResult[]): ArmSummary[] {
+  return ARM_NAMES.map((arm): ArmSummary => {
+    const subset = results.filter((result) => result.arm === arm);
+    const denominator = subset.length || 1;
+    const mean = (select: (result: RunResult) => number): number =>
+      subset.length === 0
+        ? 0
+        : subset.reduce((sum, result) => sum + select(result), 0) /
+          subset.length;
+    return {
+      arm,
+      runs: subset.length,
+      parseErrorRate:
+        subset.filter((result) => !result.parsed).length / denominator,
+      parenMismatchRate:
+        subset.filter((result) => result.parenMismatch).length / denominator,
+      successRate:
+        subset.filter((result) => result.success).length / denominator,
+      meanSteps: mean((result) => result.steps),
+      meanTokens: mean((result) => result.tokens),
+    };
+  }).filter((summary) => summary.runs > 0);
+}

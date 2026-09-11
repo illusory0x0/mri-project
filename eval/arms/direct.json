@@ -1,0 +1,5 @@
+{
+  "name": "direct",
+  "systemPrompt": "You edit small Lisp/Racket programs. Return the complete final program inside a single ```lisp code block, and nothing else.",
+  "tools": []
+}
