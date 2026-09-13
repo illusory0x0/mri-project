@@ -567,6 +567,26 @@ function openDetail(taskId: string, arm: string): void {
   overlay.classList.remove("hidden");
 }
 
+function setupTabBar(id: string): void {
+  const bar = document.getElementById(id);
+  if (!bar) return;
+  const buttons = Array.from(bar.querySelectorAll<HTMLElement>(".tab"));
+  bar.addEventListener("click", function (e) {
+    const target = e.target as Element | null;
+    const btn =
+      target && target.closest
+        ? (target.closest(".tab") as HTMLElement | null)
+        : null;
+    if (!btn) return;
+    buttons.forEach(function (b) {
+      const active = b === btn;
+      b.classList.toggle("active", active);
+      const pane = document.getElementById(b.getAttribute("data-target") || "");
+      if (pane) pane.classList.toggle("hidden", !active);
+    });
+  });
+}
+
 function main(): void {
   overlay = document.getElementById("overlay")!;
   modalBody = document.getElementById("modalbody")!;
@@ -574,6 +594,7 @@ function main(): void {
   renderSummary();
   renderMatrix();
   renderBracketDanger();
+  setupTabBar("summarytabs");
   document.getElementById("matrix")!.addEventListener("click", function (e) {
     const target = e.target as Element | null;
     const btn = target && target.closest ? target.closest(".cell") : null;

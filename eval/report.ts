@@ -144,17 +144,22 @@ table.keyval th { width: 130px; color: var(--muted); font-weight: 500; }
 </header>
 <main>
   <section class="panel">
-    <h3>编辑方式对比</h3>
-    <div id="summary"></div>
+    <h3>汇总</h3>
+    <div class="tabbar" id="summarytabs">
+      <button type="button" class="tab active" data-target="pane-headline">编辑方式对比</button>
+      <button type="button" class="tab" data-target="pane-bracket">括号危险可靠性单元</button>
+    </div>
+    <div class="pane" id="pane-headline">
+      <div id="summary"></div>
+    </div>
+    <div class="pane hidden" id="pane-bracket">
+      <div id="bracket-danger"></div>
+    </div>
   </section>
   <section class="panel">
     <h3>各任务结果</h3>
     <div id="matrix"></div>
     <p class="note">点击任意单元格，查看该次运行的完整 Prompt 交换、请求上下文与各方式步骤对比。</p>
-  </section>
-  <section class="panel">
-    <h3>括号危险可靠性单元</h3>
-    <div id="bracket-danger"></div>
   </section>
 </main>
 <div id="overlay" class="overlay hidden">
