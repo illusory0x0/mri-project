@@ -35,6 +35,17 @@ export function expandShape(spec: string): Node {
   const shape = SHAPES[spec];
   if (shape !== undefined) return clone(shape);
 
+  if (spec.startsWith("call:")) {
+    const raw = spec.slice("call:".length);
+    if (!/^\d+$/.test(raw)) {
+      throw new OpsError(`invalid arity: ${JSON.stringify(raw)}`);
+    }
+    const arity = Number(raw);
+    const args = Array.from({ length: arity }, (_, i) =>
+      SYMBOL(`_arg${i + 1}`)
+    );
+    return LIST([SYMBOL("_func"), ...args]);
+  }
   if (spec.startsWith("var:")) {
     const name = spec.slice("var:".length);
     if (!isValidSymbol(name)) {
@@ -53,7 +64,9 @@ export function expandShape(spec: string): Node {
     return { type: "atom", tag: "string", value: spec.slice("str:".length) };
   }
 
-  throw new OpsError(`unknown shape: ${spec}`);
+  throw new OpsError(
+    `unknown shape: ${spec} (valid shapes: lambda, if, define, let, apply, call:<n>, hole; atoms: var:<name>, num:<n>, str:<s>)`
+  );
 }
 
 export function parsePath(raw: string): number[] {

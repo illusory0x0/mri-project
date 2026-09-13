@@ -4,7 +4,16 @@ export const TOOL_SPECS: Record<string, ToolSpec> = {
   lisp_editor: {
     name: "lisp_editor",
     description:
-      "Edit the current Lisp program by AST path. `args` is the full argument list to the lisp-editor CLI, for example [\"outline\"] to inspect the tree, [\"replace\",\"lambda\",\"--out\",\"[0]\"] to replace a node with a shape, or [\"replace\",\"--in\",\"[0,1]\",\"--out\",\"[0,2]\"] to copy a subtree. The current program is fed on stdin and the edited program is returned.",
+      "Edit the current Lisp program by AST path. `args` is the full argument list to the lisp-editor CLI. The current program is fed on stdin and the edited program is returned on success.\n" +
+      "Commands:\n" +
+      "- [\"outline\"] lists every node as {path, tag, hole}. Call this first to find paths.\n" +
+      "- [\"replace\", \"<shape>\", \"--out\", \"<path>\"] replaces the node at <path> with a shape skeleton.\n" +
+      "- [\"replace\", \"--in\", \"<srcPath>\", \"--out\", \"<dstPath>\"] copies an existing subtree.\n" +
+      "A path is a JSON array of child indices, e.g. [0,2,1]; the root is [].\n" +
+      "Shapes: lambda -> (lambda (_param) _body); if -> (if _cond _then _else); define -> (define _name _body); let -> (let ((_name _value)) _body); apply -> (_func _args); call:<n> -> (_func _arg1 ... _argn), e.g. call:2 -> (_func _arg1 _arg2); hole -> _ (deletes a node).\n" +
+      "To build an n-argument form such as (+ x 1), use replace call:2 then fill _func=var:+, _arg1=var:x, _arg2=num:1. To change an operator in place, replace just the head node, e.g. replace var:- --out <path-of-+>.\n" +
+      "Atoms: var:<name> e.g. var:x or var:+; num:<n> e.g. num:1 or num:-2.5; str:<s> e.g. str:hello world.\n" +
+      "Any invalid request exits non-zero and leaves the program unchanged, so a failed edit can be retried.",
     parameters: {
       type: "object",
       properties: {

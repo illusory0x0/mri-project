@@ -19,6 +19,25 @@ test("replace: every v1 shape produces its skeleton", () => {
   assert.equal(ok("(a)", ["replace", "hole", "--out", "[0]"]), "_\n");
 });
 
+test("replace: call:<n> builds an n-argument application skeleton", () => {
+  assert.equal(
+    ok("(a)", ["replace", "call:2", "--out", "[0]"]),
+    "(_func _arg1 _arg2)\n"
+  );
+  assert.equal(
+    ok("(a)", ["replace", "call:3", "--out", "[0]"]),
+    "(_func _arg1 _arg2 _arg3)\n"
+  );
+  assert.equal(ok("(a)", ["replace", "call:0", "--out", "[0]"]), "(_func)\n");
+});
+
+test("replace: invalid call arity fails atomically", () => {
+  const result = run("(a)", ["replace", "call:x", "--out", "[0]"]);
+  assert.equal(result.code, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /invalid arity/);
+});
+
 test("replace: output is deterministic and re-parses", () => {
   const first = ok("(foo bar baz)", ["replace", "lambda", "--out", "[0]"]);
   const second = ok("(foo bar baz)", ["replace", "lambda", "--out", "[0]"]);
