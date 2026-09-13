@@ -27,7 +27,6 @@ const SHAPES: Record<string, Node> = {
     LIST([LIST([SYMBOL("_name"), SYMBOL("_value")])]),
     SYMBOL("_body"),
   ]),
-  apply: LIST([SYMBOL("_func"), SYMBOL("_args")]),
   hole: SYMBOL("_"),
 };
 
@@ -35,8 +34,8 @@ export function expandShape(spec: string): Node {
   const shape = SHAPES[spec];
   if (shape !== undefined) return clone(shape);
 
-  if (spec.startsWith("call:")) {
-    const raw = spec.slice("call:".length);
+  if (spec.startsWith("apply:")) {
+    const raw = spec.slice("apply:".length);
     if (!/^\d+$/.test(raw)) {
       throw new OpsError(`invalid arity: ${JSON.stringify(raw)}`);
     }
@@ -65,7 +64,7 @@ export function expandShape(spec: string): Node {
   }
 
   throw new OpsError(
-    `unknown shape: ${spec} (valid shapes: lambda, if, define, let, apply, call:<n>, hole; atoms: var:<name>, num:<n>, str:<s>)`
+    `unknown shape: ${spec} (valid shapes: lambda, if, define, let, apply:<n>, hole; atoms: var:<name>, num:<n>, str:<s>)`
   );
 }
 

@@ -15,24 +15,23 @@ test("replace: every v1 shape produces its skeleton", () => {
   assert.equal(ok("(a)", ["replace", "if", "--out", "[0]"]), "(if _cond _then _else)\n");
   assert.equal(ok("(a)", ["replace", "define", "--out", "[0]"]), "(define _name _body)\n");
   assert.equal(ok("(a)", ["replace", "let", "--out", "[0]"]), "(let ((_name _value)) _body)\n");
-  assert.equal(ok("(a)", ["replace", "apply", "--out", "[0]"]), "(_func _args)\n");
   assert.equal(ok("(a)", ["replace", "hole", "--out", "[0]"]), "_\n");
 });
 
-test("replace: call:<n> builds an n-argument application skeleton", () => {
+test("replace: apply:<n> builds an n-argument application skeleton", () => {
   assert.equal(
-    ok("(a)", ["replace", "call:2", "--out", "[0]"]),
+    ok("(a)", ["replace", "apply:2", "--out", "[0]"]),
     "(_func _arg1 _arg2)\n"
   );
   assert.equal(
-    ok("(a)", ["replace", "call:3", "--out", "[0]"]),
+    ok("(a)", ["replace", "apply:3", "--out", "[0]"]),
     "(_func _arg1 _arg2 _arg3)\n"
   );
-  assert.equal(ok("(a)", ["replace", "call:0", "--out", "[0]"]), "(_func)\n");
+  assert.equal(ok("(a)", ["replace", "apply:0", "--out", "[0]"]), "(_func)\n");
 });
 
-test("replace: invalid call arity fails atomically", () => {
-  const result = run("(a)", ["replace", "call:x", "--out", "[0]"]);
+test("replace: invalid apply arity fails atomically", () => {
+  const result = run("(a)", ["replace", "apply:x", "--out", "[0]"]);
   assert.equal(result.code, 1);
   assert.equal(result.stdout, "");
   assert.match(result.stderr, /invalid arity/);
