@@ -1,6 +1,13 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { loadArms, loadJsonDir, summarize } from "./runner.js";
+import { computeTargetDepth } from "./depth.js";
+import {
+  loadArms,
+  loadJsonDir,
+  loadTasks,
+  summarizeBracketDanger,
+  summarizeHeadline,
+} from "./runner.js";
 import { TOOL_SPECS } from "./tools.js";
 import { ARM_NAMES, ReportData, RunResult, Task } from "./types.js";
 
@@ -143,6 +150,10 @@ table.keyval th { width: 130px; color: var(--muted); font-weight: 500; }
     <div id="matrix"></div>
     <p class="note">点击任意单元格，查看该次运行的完整 Prompt 交换、请求上下文与各方式步骤对比。</p>
   </section>
+  <section class="panel">
+    <h3>括号危险可靠性单元</h3>
+    <div id="bracket-danger"></div>
+  </section>
 </main>
 <div id="overlay" class="overlay hidden">
   <div class="modal">
@@ -187,15 +198,21 @@ async function main(): Promise<void> {
   }
 
   const runs = await loadJsonDir<RunResult>(resultsDir, (name) => name !== "summary.json");
-  const allTasks = await loadJsonDir<Task>(tasksDir);
+  const allTasks = await loadTasks(tasksDir);
   const armDefs = await loadArms(armsDir);
   const tasksById = new Map(allTasks.map((task) => [task.id, task]));
   const taskIds = [...new Set(runs.map((run) => run.taskId))].sort();
-  const tasks = taskIds.map(
-    (id): Task =>
-      tasksById.get(id) ??
-        { id, locate: "explicit", construct: "atom", instruction: "", input: "", expected: "" }
-  );
+  const tasks = taskIds.map((id): Task => {
+    const task = tasksById.get(id) ?? {
+      id,
+      locate: "explicit" as const,
+      construct: "atom" as const,
+      instruction: "",
+      input: "",
+      expected: "",
+    };
+    return { ...task, depth: task.depth ?? computeTargetDepth(task.input, task.expected) };
+  });
 
   const data: ReportData = {
     generatedAt: new Date().toISOString(),
@@ -206,7 +223,8 @@ async function main(): Promise<void> {
     toolSpecs: TOOL_SPECS,
     tasks,
     runs,
-    summary: summarize(runs),
+    summary: summarizeHeadline(runs, allTasks),
+    bracketDanger: summarizeBracketDanger(runs, allTasks),
   };
 
   const payload = JSON.stringify(data).replace(/</g, "\\u003c");

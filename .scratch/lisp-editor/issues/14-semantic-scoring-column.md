@@ -11,11 +11,11 @@ semantic verdict.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] With a probe, a candidate that is textually different but returns the same
+- [x] With a probe, a candidate that is textually different but returns the same
       probe result is scored semantically equal.
-- [ ] A candidate that exceeds the step budget is `unknown`, not false, and is
+- [x] A candidate that exceeds the step budget is `unknown`, not false, and is
       excluded from the arm's semantic rate.
-- [ ] A task without a probe reports no semantic verdict.
-- [ ] Structural scoring is unchanged.
+- [x] A task without a probe reports no semantic verdict.
+- [x] Structural scoring is unchanged.

@@ -1,0 +1,10 @@
+{
+  "id": "t20-wide-build",
+  "locate": "described",
+  "construct": "build",
+  "instruction": "Replace the body of f with the sum 1 + 2 + 3 + 4 + 5 + 6 + 7, keeping the final 0.",
+  "input": "(define (f x)\n  0)",
+  "expected": "(define (f x) (+ 1 (+ 2 (+ 3 (+ 4 (+ 5 (+ 6 (+ 7 0))))))))",
+  "probe": "(f 0)",
+  "bracketDanger": true
+}

@@ -3,7 +3,13 @@ import path from "node:path";
 import { MockDriver } from "./drivers/mock.js";
 import { OpenAICompatibleDriver } from "./drivers/openai.js";
 import { Options, parseArgs, USAGE } from "./options.js";
-import { loadArms, loadTasks, runOne, summarize } from "./runner.js";
+import {
+  loadArms,
+  loadTasks,
+  runOne,
+  summarizeBracketDanger,
+  summarizeHeadline,
+} from "./runner.js";
 import { AgentDriver, RunResult } from "./types.js";
 
 function makeDriver(options: Options): AgentDriver {
@@ -59,7 +65,14 @@ async function main(): Promise<void> {
 
   await writeFile(
     path.join(options.out, "summary.json"),
-    JSON.stringify(summarize(results), null, 2)
+    JSON.stringify(
+      {
+        arms: summarizeHeadline(results, tasks),
+        bracketDanger: summarizeBracketDanger(results, tasks),
+      },
+      null,
+      2
+    )
   );
   process.stdout.write(`\nwrote ${results.length} runs to ${options.out}\n`);
 }

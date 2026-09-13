@@ -2,21 +2,23 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { runProcess } from "./process.js";
-import { Score } from "./types.js";
+import { Score, SemanticVerdict } from "./types.js";
 
 const SCORER = path.resolve(process.cwd(), "eval/score.rkt");
 
 interface RacketResult {
   parsed: boolean;
   parenMismatch: boolean;
-  matches: boolean;
   evaluates: boolean;
+  structural: boolean;
+  semantic: SemanticVerdict | null;
   error: string | null;
 }
 
 export async function scoreArtifact(
   artifact: string,
-  expected?: string
+  expected?: string,
+  probe?: string
 ): Promise<Score> {
   const dir = await mkdtemp(path.join(os.tmpdir(), "lisp-editor-score-"));
   try {
@@ -28,6 +30,11 @@ export async function scoreArtifact(
       await writeFile(expectedPath, expected, "utf8");
       args.push(expectedPath);
     }
+    if (probe !== undefined) {
+      const probePath = path.join(dir, "probe.rkt");
+      await writeFile(probePath, probe, "utf8");
+      args.push(probePath);
+    }
 
     const result = await runProcess("racket", args);
     if (result.code !== 0) {
@@ -36,6 +43,8 @@ export async function scoreArtifact(
         parenMismatch: false,
         evaluates: false,
         success: false,
+        structural: false,
+        semantic: probe !== undefined ? "unknown" : null,
         error: result.stderr.trim() || "racket scorer failed",
       };
     }
@@ -45,7 +54,9 @@ export async function scoreArtifact(
       parsed: parsed.parsed,
       parenMismatch: parsed.parenMismatch,
       evaluates: parsed.evaluates,
-      success: parsed.matches && parsed.evaluates,
+      success: parsed.structural && parsed.evaluates,
+      structural: parsed.structural,
+      semantic: parsed.semantic ?? null,
       error: parsed.error,
     };
   } finally {

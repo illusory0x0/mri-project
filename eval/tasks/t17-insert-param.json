@@ -1,0 +1,9 @@
+{
+  "id": "t17-insert-param",
+  "locate": "described",
+  "construct": "build",
+  "instruction": "Give f an extra parameter c and include it in the sum, so it returns (+ a b c).",
+  "input": "(define (f a b) (+ a b))",
+  "expected": "(define (f a b c) (+ a b c))",
+  "probe": "(f 1 2 3)"
+}

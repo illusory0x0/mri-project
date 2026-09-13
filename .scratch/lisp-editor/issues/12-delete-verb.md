@@ -8,11 +8,11 @@ leaves the source unchanged.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Deleting a binding from a `let` yields the same `let` with that binding
+- [x] Deleting a binding from a `let` yields the same `let` with that binding
       removed, not a `_` placeholder.
-- [ ] `delete --out []` fails and leaves the source unchanged.
-- [ ] A delete whose parent is not a list fails and leaves the source unchanged.
-- [ ] An out-of-range path fails and leaves the source unchanged.
-- [ ] The agent-facing tool description documents `delete`.
+- [x] `delete --out []` fails and leaves the source unchanged.
+- [x] A delete whose parent is not a list fails and leaves the source unchanged.
+- [x] An out-of-range path fails and leaves the source unchanged.
+- [x] The agent-facing tool description documents `delete`.

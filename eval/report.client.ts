@@ -1,4 +1,4 @@
-import type { Arm, ReportData, RunResult, Task } from "./types.js";
+import type { Arm, ArmSummary, ReportData, RunResult, Task } from "./types.js";
 
 interface TranscriptMessage {
   role?: string;
@@ -127,26 +127,65 @@ function renderStats(): void {
   document.getElementById("stats")!.textContent = bits.join("  ·  ");
 }
 
-function renderSummary(): void {
-  const s = DATA.summary;
-  const maxTok = Math.max(1, ...s.map((x) => x.meanTokens));
+function summaryTable(rows: ArmSummary[]): string {
+  const maxTok = Math.max(1, ...rows.map((x) => x.meanTokens));
   let html =
     '<table class="grid"><thead><tr>' +
     "<th>编辑方式</th>" +
-    '<th class="num">成功率</th><th class="num">平均步数</th><th class="num">平均 Tokens</th>' +
+    '<th class="num">成功@1</th><th class="num">结构</th><th class="num">语义</th>' +
+    '<th class="num">平均步数</th><th class="num">平均 Tokens</th>' +
     "</tr></thead><tbody>";
-  s.forEach(function (row) {
+  rows.forEach(function (row) {
     const c = armColor(row.arm);
-    const successColor = row.successRate === 1 ? "#3fb950" : "#f85149";
+    const semantic = row.semanticScored
+      ? healthBar(row.semanticRate, 1, row.semanticRate === 1 ? "#3fb950" : "#f85149") +
+        ' <span class="mini">n=' + row.semanticScored +
+        (row.semanticUnknown ? " · 未知 " + row.semanticUnknown : "") + "</span>"
+      : '<span class="muted">—</span>';
     html +=
       "<tr>" +
       '<td class="armname" style="color:' + c + '">' + esc(armLabel(row.arm)) + "</td>" +
-      '<td class="num"><div class="metric">' + healthBar(row.successRate, 1, successColor) + "</div></td>" +
+      '<td class="num"><div class="metric">' + healthBar(row.successRate, 1, row.successRate === 1 ? "#3fb950" : "#f85149") + "</div></td>" +
+      '<td class="num"><div class="metric">' + healthBar(row.structuralRate, 1, row.structuralRate === 1 ? "#3fb950" : "#f85149") + "</div></td>" +
+      '<td class="num">' + semantic + "</td>" +
       '<td class="num">' + fmt(row.meanSteps) + "</td>" +
       '<td class="num"><div class="metric">' + bar(row.meanTokens, maxTok, c) + '<span class="mval">' + row.meanTokens.toLocaleString() + "</span></div></td>" +
       "</tr>";
   });
-  document.getElementById("summary")!.innerHTML = html + "</tbody></table>";
+  return html + "</tbody></table>";
+}
+
+function renderSummary(): void {
+  document.getElementById("summary")!.innerHTML = summaryTable(DATA.summary);
+}
+
+function renderBracketDanger(): void {
+  const cell = DATA.bracketDanger;
+  const box = document.getElementById("bracket-danger");
+  if (!box) return;
+  if (!cell || cell.summary.length === 0) {
+    box.innerHTML = '<p class="muted">没有括号危险任务的结果。</p>';
+    return;
+  }
+  let html = summaryTable(cell.summary);
+  html +=
+    '<p class="note">括号危险单元包含 ' +
+    cell.taskIds.length +
+    " 个任务：" +
+    esc(cell.taskIds.join(", ")) +
+    "。这些任务已从上方表格中排除，其解析失败率与括号不匹配率在此单独统计。</p>";
+  let rates =
+    '<table class="grid"><thead><tr><th>编辑方式</th><th class="num">解析失败率</th><th class="num">括号不匹配率</th></tr></thead><tbody>';
+  cell.summary.forEach(function (row) {
+    const c = armColor(row.arm);
+    rates +=
+      "<tr>" +
+      '<td class="armname" style="color:' + c + '">' + esc(armLabel(row.arm)) + "</td>" +
+      '<td class="num">' + fmt(row.parseErrorRate * 100) + "%</td>" +
+      '<td class="num">' + fmt(row.parenMismatchRate * 100) + "%</td>" +
+      "</tr>";
+  });
+  box.innerHTML = html + rates + "</tbody></table>";
 }
 
 function renderMatrix(): void {
@@ -164,7 +203,10 @@ function renderMatrix(): void {
       '<tr><td class="taskcell"><div class="tid">' + esc(task.id) + "</div>" +
       '<div class="ins">' + esc(task.instruction) + "</div>" +
       '<div class="tags"><span class="tag">' + esc(task.construct) + "</span>" +
-      '<span class="tag alt">' + esc(task.locate) + "</span></div>" +
+      '<span class="tag alt">' + esc(task.locate) + "</span>" +
+      (task.depth != null ? '<span class="tag alt">depth ' + task.depth + "</span>" : "") +
+      (task.bracketDanger ? '<span class="tag">bracket</span>' : "") +
+      "</div>" +
       "</td>";
     DATA.armNames.forEach(function (a) {
       const cellRuns = DATA.runs.filter(function (r) {
@@ -468,10 +510,21 @@ function openDetail(taskId: string, arm: string): void {
   modalBody.appendChild(head);
 
   const chips = el("div", "chips");
+  const semanticLabel =
+    run.semantic == null
+      ? "无探针"
+      : run.semantic === "equal"
+        ? "等价"
+        : run.semantic === "different"
+          ? "不等价"
+          : "未知";
   (
     [
       ["步数", fmt(run.steps)],
       ["Tokens", run.tokens.toLocaleString()],
+      ["深度", String(run.depth)],
+      ["结构", run.structural ? "一致" : "不一致"],
+      ["语义", semanticLabel],
       ["解析", run.parsed ? "通过" : "失败"],
       ["括号", run.parenMismatch ? "不匹配" : "匹配"],
       ["求值", run.evaluates ? "通过" : "失败"],
@@ -514,6 +567,7 @@ function main(): void {
   renderStats();
   renderSummary();
   renderMatrix();
+  renderBracketDanger();
   document.getElementById("matrix")!.addEventListener("click", function (e) {
     const target = e.target as Element | null;
     const btn = target && target.closest ? target.closest(".cell") : null;

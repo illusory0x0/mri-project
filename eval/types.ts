@@ -2,6 +2,8 @@ export type LocateDifficulty = "explicit" | "described";
 
 export type ConstructKind = "atom" | "wrap" | "build" | "copy" | "multi";
 
+export type SemanticVerdict = "equal" | "different" | "unknown";
+
 export interface Task {
   id: string;
   locate: LocateDifficulty;
@@ -9,6 +11,9 @@ export interface Task {
   instruction: string;
   input: string;
   expected: string;
+  probe?: string;
+  bracketDanger?: boolean;
+  depth?: number;
 }
 
 export type ArmName = "direct" | "ast-edit" | "text-edit" | "diff";
@@ -66,6 +71,9 @@ export interface RunResult {
   parenMismatch: boolean;
   evaluates: boolean;
   success: boolean;
+  structural: boolean;
+  semantic: SemanticVerdict | null;
+  depth: number;
   parseError: string | null;
   steps: number;
   tokens: number;
@@ -78,6 +86,8 @@ export interface Score {
   parenMismatch: boolean;
   evaluates: boolean;
   success: boolean;
+  structural: boolean;
+  semantic: SemanticVerdict | null;
   error: string | null;
 }
 
@@ -87,8 +97,17 @@ export interface ArmSummary {
   parseErrorRate: number;
   parenMismatchRate: number;
   successRate: number;
+  structuralRate: number;
+  semanticRate: number;
+  semanticScored: number;
+  semanticUnknown: number;
   meanSteps: number;
   meanTokens: number;
+}
+
+export interface BracketDangerCell {
+  taskIds: string[];
+  summary: ArmSummary[];
 }
 
 export interface ReportData {
@@ -101,4 +120,5 @@ export interface ReportData {
   tasks: Task[];
   runs: RunResult[];
   summary: ArmSummary[];
+  bracketDanger: BracketDangerCell;
 }

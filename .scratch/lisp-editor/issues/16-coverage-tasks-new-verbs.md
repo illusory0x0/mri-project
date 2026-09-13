@@ -7,10 +7,10 @@ optional probe, so the task set exercises the full vocabulary.
 
 **Blocked by:** 12, 13
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] At least one task requires deleting a node.
-- [ ] At least one task requires inserting a node into a nested list.
-- [ ] At least one task starts from an empty input and requires bootstrapping.
-- [ ] Each new task is solvable by a valid sequence of CLI edits, with no
+- [x] At least one task requires deleting a node.
+- [x] At least one task requires inserting a node into a nested list.
+- [x] At least one task starts from an empty input and requires bootstrapping.
+- [x] Each new task is solvable by a valid sequence of CLI edits, with no
       free-text input.

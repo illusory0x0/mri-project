@@ -4,5 +4,6 @@
   "construct": "multi",
   "instruction": "In the call (combine (parse input) (validate schema) (transform rules)), swap the first and third arguments so it becomes (combine (transform rules) (validate schema) (parse input)).",
   "input": "(define (pipeline input schema rules)\n  (combine\n    (parse input)\n    (validate schema)\n    (transform rules)))",
-  "expected": "(define (pipeline input schema rules) (combine (transform rules) (validate schema) (parse input)))"
+  "expected": "(define (pipeline input schema rules) (combine (transform rules) (validate schema) (parse input)))",
+  "bracketDanger": true
 }

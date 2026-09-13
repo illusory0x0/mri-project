@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import { computeTargetDepth } from "../eval/depth.js";
 import { MockDriver } from "../eval/drivers/mock.js";
 import { parseArgs } from "../eval/options.js";
 import { runProcess } from "../eval/process.js";
@@ -47,9 +48,96 @@ test("scorer: parseable but different program is not a success", async () => {
   assert.equal(score.success, false);
 });
 
+test("scorer: a probe makes a textually different program semantically equal", async () => {
+  const score = await scoreArtifact(
+    "(define (f x) (+ 1 x))",
+    "(define (f x) (+ x 1))",
+    "(f 2)"
+  );
+  assert.equal(score.structural, false);
+  assert.equal(score.semantic, "equal");
+  assert.equal(score.success, false);
+});
+
+test("scorer: a probe distinguishes a semantically different program", async () => {
+  const score = await scoreArtifact(
+    "(define (f x) (- x 1))",
+    "(define (f x) (+ x 1))",
+    "(f 2)"
+  );
+  assert.equal(score.structural, false);
+  assert.equal(score.semantic, "different");
+});
+
+test("scorer: a non-terminating candidate probe is unknown, not false", async () => {
+  const score = await scoreArtifact(
+    "(define (f x) (f x))",
+    "(define (f x) 0)",
+    "(f 0)"
+  );
+  assert.equal(score.semantic, "unknown");
+});
+
+test("scorer: a task without a probe reports no semantic verdict", async () => {
+  const score = await scoreArtifact(
+    "(define (f x) (+ x 1))",
+    "(define (f x) (+ x 1))"
+  );
+  assert.equal(score.semantic, null);
+  assert.equal(score.structural, true);
+});
+
+test("scorer: structural scoring is unchanged by the probe", async () => {
+  const score = await scoreArtifact(
+    "(define (f x) (+ x 1))",
+    "(define (f x) (+ x 1))",
+    "(f 2)"
+  );
+  assert.equal(score.parsed, true);
+  assert.equal(score.structural, true);
+  assert.equal(score.success, true);
+  assert.equal(score.semantic, "equal");
+});
+
+test("computeTargetDepth: derives the depth of the changed node", () => {
+  assert.equal(computeTargetDepth("(a b)", "(a c)"), 2);
+  assert.equal(computeTargetDepth("(a (b c))", "(a (b d))"), 3);
+  assert.equal(computeTargetDepth("(a)", "(a)"), 0);
+});
+
 test("runOne: direct arm scores its typed artifact", async () => {
   const result = await runOne(new MockDriver(), directArm, task);
   assert.equal(result.success, true);
+  assert.equal(result.depth, 2);
+});
+
+test("summarize: semantic rate excludes unknown", () => {
+  const base: RunResult = {
+    taskId: "t",
+    arm: "ast-edit",
+    parsed: true,
+    parenMismatch: false,
+    evaluates: true,
+    success: false,
+    structural: false,
+    semantic: null,
+    depth: 0,
+    parseError: null,
+    steps: 1,
+    tokens: 1,
+    finalArtifact: "",
+    transcript: [],
+  };
+  const summaries = summarize([
+    { ...base, semantic: "equal" },
+    { ...base, semantic: "different" },
+    { ...base, semantic: "unknown" },
+    { ...base, semantic: null },
+  ]);
+  const summary = summaries.find((item) => item.arm === "ast-edit")!;
+  assert.equal(summary.semanticScored, 2);
+  assert.equal(summary.semanticUnknown, 1);
+  assert.equal(summary.semanticRate, 0.5);
 });
 
 test("runOne: direct arm's broken artifact is a paren mismatch", async () => {
@@ -414,6 +502,9 @@ test("summarize: aggregates rates per arm", () => {
     parenMismatch: paren,
     evaluates: parsed,
     success,
+    structural: success,
+    semantic: null,
+    depth: 0,
     parseError: null,
     steps: 2,
     tokens: 100,

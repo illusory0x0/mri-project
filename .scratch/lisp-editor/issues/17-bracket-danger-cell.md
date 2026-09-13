@@ -7,9 +7,9 @@ nesting-driven ones.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] The cell retains the existing multi-line tasks and adds at least one more.
-- [ ] The cell's parse-error and bracket-mismatch rates are reported separately
+- [x] The cell retains the existing multi-line tasks and adds at least one more.
+- [x] The cell's parse-error and bracket-mismatch rates are reported separately
       from the headline metrics.
-- [ ] Optionally, a subtree-move task is added once `delete` and `insert` exist.
+- [x] Optionally, a subtree-move task is added once `delete` and `insert` exist.

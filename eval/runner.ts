@@ -1,6 +1,7 @@
 import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { computeTargetDepth } from "./depth.js";
 import { applyPatch } from "./patch.js";
 import { runProcess } from "./process.js";
 import { scoreArtifact } from "./scorer.js";
@@ -10,6 +11,7 @@ import {
   Arm,
   ARM_NAMES,
   ArmSummary,
+  BracketDangerCell,
   DriverResult,
   RunResult,
   Task,
@@ -67,7 +69,7 @@ export function buildToolContext(
         if (result.code !== 0) {
           return JSON.stringify({ ok: false, error: result.stderr.trim() });
         }
-        if (args[0] === "replace") {
+        if (args[0] === "replace" || args[0] === "delete" || args[0] === "insert") {
           workspace.source = result.stdout;
           return JSON.stringify({ ok: true, source: result.stdout });
         }
@@ -98,6 +100,7 @@ export async function runOne(
   meta: RunMeta = {}
 ): Promise<RunResult> {
   const workspace: Workspace = { source: task.input };
+  const depth = task.depth ?? computeTargetDepth(task.input, task.expected);
   const timeoutMs = meta.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const ctx = buildToolContext(workspace, controller.signal);
@@ -145,6 +148,9 @@ export async function runOne(
       parenMismatch: false,
       evaluates: false,
       success: false,
+      structural: false,
+      semantic: task.probe !== undefined ? "unknown" : null,
+      depth,
       parseError: `run timed out after ${timeoutMs}ms`,
       steps: 0,
       tokens: 0,
@@ -168,6 +174,9 @@ export async function runOne(
         parenMismatch: false,
         evaluates: false,
         success: false,
+        structural: false,
+        semantic: task.probe !== undefined ? "unknown" : null,
+        depth,
         parseError: `diff apply failed: ${error instanceof Error ? error.message : String(error)}`,
         steps: result.steps,
         tokens: result.tokens,
@@ -180,7 +189,7 @@ export async function runOne(
   } else {
     finalArtifact = workspace.source;
   }
-  const score = await scoreArtifact(finalArtifact, task.expected);
+  const score = await scoreArtifact(finalArtifact, task.expected, task.probe);
 
   return {
     taskId: task.id,
@@ -191,6 +200,9 @@ export async function runOne(
     parenMismatch: score.parenMismatch,
     evaluates: score.evaluates,
     success: score.success,
+    structural: score.structural,
+    semantic: score.semantic,
+    depth,
     parseError: score.error,
     steps: result.steps,
     tokens: result.tokens,
@@ -214,10 +226,14 @@ export async function loadJsonDir<T>(
   );
 }
 
-export function loadTasks(
+export async function loadTasks(
   dir = path.resolve(process.cwd(), "eval/tasks")
 ): Promise<Task[]> {
-  return loadJsonDir<Task>(dir);
+  const tasks = await loadJsonDir<Task>(dir);
+  return tasks.map((task) => ({
+    ...task,
+    depth: computeTargetDepth(task.input, task.expected),
+  }));
 }
 
 export function loadArms(
@@ -235,6 +251,15 @@ export function summarize(results: RunResult[]): ArmSummary[] {
         ? 0
         : subset.reduce((sum, result) => sum + select(result), 0) /
           subset.length;
+    const withProbe = subset.filter(
+      (result) => result.semantic !== null && result.semantic !== undefined
+    );
+    const scored = withProbe.filter((result) => result.semantic !== "unknown");
+    const semanticRate =
+      scored.length > 0
+        ? scored.filter((result) => result.semantic === "equal").length /
+          scored.length
+        : 0;
     return {
       arm,
       runs: subset.length,
@@ -244,8 +269,39 @@ export function summarize(results: RunResult[]): ArmSummary[] {
         subset.filter((result) => result.parenMismatch).length / denominator,
       successRate:
         subset.filter((result) => result.success).length / denominator,
+      structuralRate:
+        subset.filter((result) => result.structural).length / denominator,
+      semanticRate,
+      semanticScored: scored.length,
+      semanticUnknown: withProbe.filter((result) => result.semantic === "unknown")
+        .length,
       meanSteps: mean((result) => result.steps),
       meanTokens: mean((result) => result.tokens),
     };
   }).filter((summary) => summary.runs > 0);
+}
+
+export function bracketDangerTaskIds(tasks: Task[]): Set<string> {
+  return new Set(
+    tasks.filter((task) => task.bracketDanger).map((task) => task.id)
+  );
+}
+
+export function summarizeBracketDanger(
+  results: RunResult[],
+  tasks: Task[]
+): BracketDangerCell {
+  const ids = bracketDangerTaskIds(tasks);
+  return {
+    taskIds: [...ids].sort(),
+    summary: summarize(results.filter((result) => ids.has(result.taskId))),
+  };
+}
+
+export function summarizeHeadline(
+  results: RunResult[],
+  tasks: Task[]
+): ArmSummary[] {
+  const danger = bracketDangerTaskIds(tasks);
+  return summarize(results.filter((result) => !danger.has(result.taskId)));
 }

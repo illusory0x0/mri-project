@@ -1,0 +1,9 @@
+{
+  "id": "t18-bootstrap",
+  "locate": "described",
+  "construct": "build",
+  "instruction": "Starting from an empty file, define a function (square x) that returns (* x x).",
+  "input": "",
+  "expected": "(define (square x) (* x x))",
+  "probe": "(square 5)"
+}

@@ -1,0 +1,10 @@
+{
+  "id": "t19-deep-nest",
+  "locate": "described",
+  "construct": "wrap",
+  "instruction": "Change the innermost x in deep to (* x x) so it squares that value.",
+  "input": "(define (deep x)\n  (+ 1\n     (+ 2\n        (+ 3\n           (+ 4\n              (+ 5 x))))))",
+  "expected": "(define (deep x) (+ 1 (+ 2 (+ 3 (+ 4 (+ 5 (* x x)))))))",
+  "probe": "(deep 1)",
+  "bracketDanger": true
+}

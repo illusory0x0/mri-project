@@ -263,15 +263,17 @@ integration tests establish the pattern future work should follow.
   and success@1 (is the vocabulary expressive enough to reach the expected
   program?), and reports bracket mismatch as a separate reliability cell over a
   few deliberately bracket-dangerous tasks.
-- **Known gap in the task set.** The current fixed tasks are all small enough
-  that text/`sed` editing never produced a bracket mismatch, so the reliability
-  cell is not yet populated; and each task mixes reference-resolution difficulty
-  with construction difficulty, which confounds the effort comparison. See
-  tickets 16 and 17.
-- **Known capability gaps.** The current code has no structural delete and
-  cannot bootstrap a program from an empty file; the design (`delete` and
-  `insert`, with the root as a container) is settled in tickets 12 and 13 and not
-  yet implemented.
+- **Reliability cell.** The bracket-danger cell now retains the original
+  multi-line tasks and adds nesting- and size-driven ones; the first real-model
+  run produced a genuine bracket mismatch for the `diff` arm on the deepest
+  task. The cell's parse-error and bracket-mismatch rates are summarized
+  separately from the headline (which excludes the cell's tasks). Tasks still
+  mix reference-resolution difficulty with construction difficulty, which
+  confounds the effort comparison.
+- **Delete, insert, and bootstrap are implemented.** `delete` splices a node
+  out of its parent list and `insert` places a node at a chosen index (the root
+  is the program's list of top-level forms, so inserting into the root adds a
+  top-level form and bootstraps an empty program).
 - **Open follow-ups.** If shape/atom expressiveness proves too weak for the task
   set, a constrained free-text mode may need revisiting; that decision is
   deliberately deferred until the first experiment data exists.

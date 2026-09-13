@@ -117,6 +117,48 @@ export function replaceAt(root: Node, path: number[], next: Node): Node {
   return { type: "list", items };
 }
 
+export function deleteAt(root: Node, path: number[]): Node {
+  if (path.length === 0) {
+    throw new OpsError("cannot delete the root");
+  }
+  const parentPath = path.slice(0, -1);
+  const index = path[path.length - 1];
+  const parent = resolve(root, parentPath);
+  if (parent.type !== "list") {
+    throw new OpsError(
+      `cannot delete path ${JSON.stringify(path)}: its parent is not a list`
+    );
+  }
+  if (index >= parent.items.length) {
+    throw new OpsError(`path ${JSON.stringify(path)} is out of range`);
+  }
+  const items = parent.items.slice();
+  items.splice(index, 1);
+  return replaceAt(root, parentPath, { type: "list", items });
+}
+
+export function insertAt(
+  root: Node,
+  path: number[],
+  index: number,
+  next: Node
+): Node {
+  const target = resolve(root, path);
+  if (target.type !== "list") {
+    throw new OpsError(
+      `cannot insert into path ${JSON.stringify(path)}: it is not a list`
+    );
+  }
+  if (!Number.isInteger(index) || index < 0 || index > target.items.length) {
+    throw new OpsError(
+      `index ${index} is out of range for path ${JSON.stringify(path)}`
+    );
+  }
+  const items = target.items.slice();
+  items.splice(index, 0, next);
+  return replaceAt(root, path, { type: "list", items });
+}
+
 export type OutlineKind =
   | "define" | "lambda" | "let" | "let*" | "if" | "cond"
   | "apply"

@@ -6,9 +6,9 @@ so results can be sliced by depth without a hand-typed field.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Every run records a computed depth.
-- [ ] Depth is derived from the task, not entered by hand.
-- [ ] The report surfaces depth.
-- [ ] No task carries a hand-typed depth or nesting field.
+- [x] Every run records a computed depth.
+- [x] Depth is derived from the task, not entered by hand.
+- [x] The report surfaces depth.
+- [x] No task carries a hand-typed depth or nesting field.

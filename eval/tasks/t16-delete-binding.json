@@ -1,0 +1,9 @@
+{
+  "id": "t16-delete-binding",
+  "locate": "explicit",
+  "construct": "multi",
+  "instruction": "Remove the unused binding b from the let, leaving (let ((a 1) (c 3)) (+ a c)).",
+  "input": "(define (f x) (let ((a 1) (b 2) (c 3)) (+ a c)))",
+  "expected": "(define (f x) (let ((a 1) (c 3)) (+ a c)))",
+  "probe": "(f 0)"
+}

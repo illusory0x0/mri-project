@@ -9,15 +9,15 @@ into a well-formed program.
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] Inserting into the root of an empty program yields exactly one top-level
+- [x] Inserting into the root of an empty program yields exactly one top-level
       datum; inserting a `define` shape yields one top-level form, not three
       separate datums.
-- [ ] A node inserted at index `i` appears immediately before the child that was
+- [x] A node inserted at index `i` appears immediately before the child that was
       at `i`.
-- [ ] `--at` equal to the list's length appends.
-- [ ] `insert --in` copies the subtree at the source path into the destination.
-- [ ] Inserting into a non-list, or an `--at` outside the valid range, fails and
+- [x] `--at` equal to the list's length appends.
+- [x] `insert --in` copies the subtree at the source path into the destination.
+- [x] Inserting into a non-list, or an `--at` outside the valid range, fails and
       leaves the source unchanged.
-- [ ] The agent-facing tool description documents `insert`.
+- [x] The agent-facing tool description documents `insert`.
