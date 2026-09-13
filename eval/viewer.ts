@@ -109,6 +109,8 @@ function renderMatrix() {
   });
   html += "</tr></thead><tbody>";
   DATA.tasks.forEach(function (task) {
+    var directRun = DATA.runs.filter(function (r) { return r.taskId === task.id && r.arm === "direct"; })[0];
+    var baseTok = directRun ? directRun.tokens : 0;
     html += '<tr><td class="taskcell"><div class="tid">' + esc(task.id) + '</div>'
       + '<div class="ins">' + esc(task.instruction) + '</div>'
       + '<div class="tags"><span class="tag">' + esc(task.construct) + '</span>'
@@ -118,10 +120,11 @@ function renderMatrix() {
       var cellRuns = DATA.runs.filter(function (r) { return r.taskId === task.id && r.arm === a; });
       if (!cellRuns.length) { html += '<td class="na">—</td>'; return; }
       var r = cellRuns[0];
+      var ratio = baseTok > 0 ? '<span class="ratio">×' + (r.tokens / baseTok).toFixed(1) + '</span>' : '';
       html += '<td><button class="cell ' + (r.success ? "ok" : "bad") + '"'
         + ' data-task="' + esc(task.id) + '" data-arm="' + esc(a) + '">'
         + '<span class="mark">' + (r.success ? "✓" : "✗") + "</span>"
-        + '<span class="mini">' + r.steps + " 步 · " + r.tokens.toLocaleString() + " tok</span>"
+        + '<span class="mini">' + r.steps + " 步 · " + r.tokens.toLocaleString() + " tok " + ratio + "</span>"
         + "</button></td>";
     });
     html += "</tr>";
@@ -487,6 +490,7 @@ table.grid tbody tr:hover { background: var(--panel2); }
 .cell.ok .mark { color: var(--green); }
 .cell.bad .mark { color: var(--red); }
 .mini { color: var(--muted); font-size: 11.5px; }
+.ratio { color: var(--amber); font-weight: 600; }
 td.na { color: var(--muted); }
 .overlay {
   position: fixed; inset: 0; background: rgba(1, 4, 9, .78); display: flex;
