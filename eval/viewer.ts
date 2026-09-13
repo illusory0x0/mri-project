@@ -65,12 +65,6 @@ function labeled(label, node) {
   w.appendChild(node);
   return w;
 }
-function rawDetails(obj) {
-  var d = el("details", "raw");
-  d.appendChild(el("summary", null, "原始 JSON"));
-  d.appendChild(codeBlock("rawjson", JSON.stringify(obj, null, 2)));
-  return d;
-}
 function bar(value, max, color) {
   var w = max > 0 ? Math.max(2, (value / max) * 100) : 0;
   return '<div class="bar"><span style="width:' + w + "%;background:" + color + '"></span></div>';
@@ -92,19 +86,19 @@ function renderSummary() {
   var maxTok = Math.max.apply(null, s.map(function (x) { return x.meanTokens; }).concat([1]));
   var maxSteps = Math.max.apply(null, s.map(function (x) { return x.meanSteps; }).concat([1]));
   var html = '<table class="grid"><thead><tr>'
-    + '<th>编辑方式</th><th>运行数</th><th>解析错误率</th><th>括号不匹配率</th>'
-    + '<th>成功率</th><th>平均步数</th><th>平均 Tokens</th>'
+    + '<th>编辑方式</th><th class="num">运行数</th><th class="num">解析错误率</th><th class="num">括号不匹配率</th>'
+    + '<th class="num">成功率</th><th class="num">平均步数</th><th class="num">平均 Tokens</th>'
     + '</tr></thead><tbody>';
   s.forEach(function (row) {
     var c = armColor(row.arm);
     html += '<tr>'
       + '<td class="armname" style="color:' + c + '">' + esc(armLabel(row.arm)) + '</td>'
-      + '<td>' + row.runs + '</td>'
-      + '<td>' + pct(row.parseErrorRate) + '</td>'
-      + '<td>' + pct(row.parenMismatchRate) + '</td>'
-      + '<td class="' + (row.successRate === 1 ? "ok" : "bad") + '">' + pct(row.successRate) + '</td>'
-      + '<td><div class="metric">' + fmt(row.meanSteps) + bar(row.meanSteps, maxSteps, c) + '</div></td>'
-      + '<td><div class="metric">' + row.meanTokens.toLocaleString() + bar(row.meanTokens, maxTok, c) + '</div></td>'
+      + '<td class="num">' + row.runs + '</td>'
+      + '<td class="num">' + pct(row.parseErrorRate) + '</td>'
+      + '<td class="num">' + pct(row.parenMismatchRate) + '</td>'
+      + '<td class="num ' + (row.successRate === 1 ? "ok" : "bad") + '">' + pct(row.successRate) + '</td>'
+      + '<td class="num"><div class="metric">' + bar(row.meanSteps, maxSteps, c) + '<span class="mval">' + fmt(row.meanSteps) + '</span></div></td>'
+      + '<td class="num"><div class="metric">' + bar(row.meanTokens, maxTok, c) + '<span class="mval">' + row.meanTokens.toLocaleString() + '</span></div></td>'
       + '</tr>';
   });
   document.getElementById("summary").innerHTML = html + "</tbody></table>";
@@ -204,7 +198,6 @@ function renderTimeline(run) {
         role === "system" ? "发送给模型的 system 消息" : "发送给模型的 user 消息",
         codeBlock("content " + (role === "system" ? "sys" : ""), m.content)
       ));
-      card.body.appendChild(rawDetails(m));
       tl.appendChild(card.root);
       return;
     }
@@ -232,14 +225,12 @@ function renderTimeline(run) {
         if (ti != null) {
           used[ti] = true;
           st.appendChild(labeled("工具返回", renderResult(messages[ti].content)));
-          st.appendChild(rawDetails(messages[ti]));
         } else {
           st.appendChild(el("div", "muted", "（未找到对应的 tool 返回）"));
         }
         acard.body.appendChild(st);
       });
       if (m.content) acard.body.appendChild(labeled("回复内容", codeBlock("content answer", m.content)));
-      acard.body.appendChild(rawDetails(m));
       tl.appendChild(acard.root);
       return;
     }
@@ -247,7 +238,6 @@ function renderTimeline(run) {
     if (role === "tool") {
       var tcard = turnCard("tool", "工具返回（未配对）");
       tcard.body.appendChild(renderResult(m.content));
-      tcard.body.appendChild(rawDetails(m));
       tl.appendChild(tcard.root);
       return;
     }
@@ -486,11 +476,14 @@ section.panel { background: var(--panel); border: 1px solid var(--border); borde
 table.grid { width: 100%; border-collapse: collapse; }
 table.grid th, table.grid td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
 table.grid th { color: var(--muted); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
+table.grid th.num, table.grid td.num { text-align: right; }
+table.grid th.num { padding-right: 10px; }
 table.grid tbody tr:hover { background: var(--panel2); }
 .armname { font-weight: 600; white-space: nowrap; }
 .ok { color: var(--green); }
 .bad { color: var(--red); }
 .metric { display: flex; align-items: center; gap: 8px; }
+.mval { min-width: 5.5em; text-align: right; font-variant-numeric: tabular-nums; }
 .bar { flex: 1; min-width: 60px; height: 8px; background: #21262d; border-radius: 4px; overflow: hidden; }
 .bar span { display: block; height: 100%; border-radius: 4px; }
 .taskcell { max-width: 360px; }
@@ -532,7 +525,6 @@ pre.answer { border-color: var(--green); }
 pre.cmd { border-color: #3a3f5a; color: #c9d1ff; }
 pre.term { background: #05080d; }
 pre.err { border-color: var(--red); color: #ffb4b0; }
-pre.rawjson { color: var(--muted); }
 .tabs { margin-top: 4px; }
 .tabbar { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px; position: sticky; top: 0; background: var(--panel); z-index: 1; padding-top: 6px; }
 .tab { background: none; border: 0; border-bottom: 2px solid transparent; color: var(--muted); padding: 8px 14px; cursor: pointer; font-size: 13.5px; }
@@ -548,8 +540,8 @@ pre.rawjson { color: var(--muted); }
 .turn.role-tool { border-left-color: var(--green); }
 .turnhead { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
 .pill { font-size: 11.5px; font-weight: 600; padding: 2px 9px; border-radius: 20px; background: #21262d; }
-details.reason, details.raw { margin-bottom: 8px; }
-details.reason summary, details.raw summary { cursor: pointer; color: var(--muted); font-size: 12.5px; margin-bottom: 6px; }
+details.reason { margin-bottom: 8px; }
+details.reason summary { cursor: pointer; color: var(--muted); font-size: 12.5px; margin-bottom: 6px; }
 .step { border: 1px dashed #3a4148; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: #14181e; }
 .stephead { font-size: 12.5px; font-weight: 600; color: #c9d1ff; margin-bottom: 6px; }
 .outline { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
