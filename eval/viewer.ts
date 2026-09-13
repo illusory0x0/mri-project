@@ -65,8 +65,19 @@ function labeled(label, node) {
   return w;
 }
 function bar(value, max, color) {
-  var w = max > 0 ? Math.max(2, (value / max) * 100) : 0;
+  var w = max > 0 ? (value / max) * 100 : 0;
+  if (w > 0 && w < 2) w = 2;
   return '<div class="bar"><span style="width:' + w + "%;background:" + color + '"></span></div>';
+}
+function healthBar(value, max, color) {
+  var filled = max > 0 ? Math.round((value / max) * 10) : 0;
+  var html = '<div class="bar health">';
+  for (var i = 0; i < 10; i++) {
+    if (i < filled) html += '<span class="seg on" style="background:' + color + '"></span>';
+    else html += '<span class="seg"></span>';
+  }
+  html += '</div>';
+  return html;
 }
 
 function renderStats() {
@@ -82,20 +93,17 @@ function renderStats() {
 function renderSummary() {
   var s = DATA.summary;
   var maxTok = Math.max.apply(null, s.map(function (x) { return x.meanTokens; }).concat([1]));
-  var maxSteps = Math.max.apply(null, s.map(function (x) { return x.meanSteps; }).concat([1]));
   var html = '<table class="grid"><thead><tr>'
-    + '<th>编辑方式</th><th class="num">运行数</th><th class="num">解析错误率</th><th class="num">括号不匹配率</th>'
+    + '<th>编辑方式</th>'
     + '<th class="num">成功率</th><th class="num">平均步数</th><th class="num">平均 Tokens</th>'
     + '</tr></thead><tbody>';
   s.forEach(function (row) {
     var c = armColor(row.arm);
+    var successColor = row.successRate === 1 ? "#3fb950" : "#f85149";
     html += '<tr>'
       + '<td class="armname" style="color:' + c + '">' + esc(armLabel(row.arm)) + '</td>'
-      + '<td class="num">' + row.runs + '</td>'
-      + '<td class="num">' + pct(row.parseErrorRate) + '</td>'
-      + '<td class="num">' + pct(row.parenMismatchRate) + '</td>'
-      + '<td class="num ' + (row.successRate === 1 ? "ok" : "bad") + '">' + pct(row.successRate) + '</td>'
-      + '<td class="num"><div class="metric">' + bar(row.meanSteps, maxSteps, c) + '<span class="mval">' + fmt(row.meanSteps) + '</span></div></td>'
+      + '<td class="num"><div class="metric">' + healthBar(row.successRate, 1, successColor) + '</div></td>'
+      + '<td class="num">' + fmt(row.meanSteps) + '</td>'
       + '<td class="num"><div class="metric">' + bar(row.meanTokens, maxTok, c) + '<span class="mval">' + row.meanTokens.toLocaleString() + '</span></div></td>'
       + '</tr>';
   });
@@ -408,7 +416,7 @@ function openDetail(taskId, arm) {
   }
   modalBody.appendChild(taskBox);
 
-  var t = tabs(["对话（Prompt 交换）", "请求上下文", "三臂对比"]);
+  var t = tabs(["对话（Prompt 交换）", "请求上下文", "各方式对比"]);
   modalBody.appendChild(t.bar);
   t.panes[0].appendChild(renderTimeline(run));
   t.panes[1].appendChild(renderRequestContext(run));
@@ -471,10 +479,12 @@ table.grid tbody tr:hover { background: var(--panel2); }
 .armname { font-weight: 600; white-space: nowrap; }
 .ok { color: var(--green); }
 .bad { color: var(--red); }
-.metric { display: flex; align-items: center; gap: 8px; }
-.mval { min-width: 5.5em; text-align: right; font-variant-numeric: tabular-nums; }
-.bar { flex: 1; min-width: 60px; height: 8px; background: #21262d; border-radius: 4px; overflow: hidden; }
+.metric { position: relative; height: 20px; }
+.mval { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-variant-numeric: tabular-nums; z-index: 10; white-space: nowrap; text-shadow: 0 0 4px rgba(0,0,0,.8), 0 0 4px rgba(0,0,0,.8); }
+.bar { position: absolute; inset: 0; width: 100%; height: 100%; background: #21262d; border-radius: 4px; overflow: hidden; z-index: 0; }
 .bar span { display: block; height: 100%; border-radius: 4px; }
+.bar.health { display: flex; gap: 2px; background: #161b22; padding: 2px 0; overflow: visible; border-radius: 4px; }
+.bar.health .seg { flex: 1; height: calc(100% - 4px); background: #2d333b; border: 1px solid #3d444d; border-radius: 2px; }
 .taskcell { max-width: 360px; }
 .tid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); }
 .ins { color: var(--muted); font-size: 12.5px; }
@@ -563,14 +573,13 @@ table.keyval th { width: 130px; color: var(--muted); font-weight: 500; }
 </header>
 <main>
   <section class="panel">
-    <h3>三种编辑方式对比</h3>
+    <h3>编辑方式对比</h3>
     <div id="summary"></div>
-    <p class="note">editor 依构造几乎没有括号不匹配，真实信号在成功率、步数与 Tokens。柱状条按各指标三臂最大值缩放。</p>
   </section>
   <section class="panel">
     <h3>各任务结果</h3>
     <div id="matrix"></div>
-    <p class="note">点击任意单元格，查看该次运行的完整 Prompt 交换、请求上下文与三臂步骤对比。</p>
+    <p class="note">点击任意单元格，查看该次运行的完整 Prompt 交换、请求上下文与各方式步骤对比。</p>
   </section>
 </main>
 <div id="overlay" class="overlay hidden">
