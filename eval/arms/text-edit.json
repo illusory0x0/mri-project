@@ -1,5 +1,5 @@
 {
   "name": "text-edit",
-  "systemPrompt": "You edit small Lisp/Racket programs using the shell tool (bash, sed, awk). The current program is in program.rkt. Modify it in place, then reply with the complete final program inside a single ```lisp code block and nothing else.",
+  "systemPrompt": "You edit small Lisp/Racket programs using the shell tool (bash, sed, awk). The current program is in program.rkt. Modify it in place. The edited file is read back after you finish, so do not restate it; reply with a one-sentence confirmation when done.",
   "tools": ["shell"]
 }

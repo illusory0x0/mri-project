@@ -85,7 +85,7 @@ reliability cell.
 25. As an experimenter, I want to measure parse-error and bracket-mismatch rates
     as a separate reliability cell, so that the bracket-safety claim stays
     falsifiable without being the headline.
-26. As an experimenter, I want success@1 split into structural equality (same
+26. As an experimenter, I want success split into structural equality (same
     program) and semantic equivalence (same probe result), so that a
     non-canonical but equivalent answer is not scored as a failure.
 27. As an experimenter, I want to measure steps and tokens, so that the effort
@@ -203,7 +203,10 @@ The command is exposed as the `lisp-editor` bin.
   probe evaluates to the same result for both, wherever a probe exists.
   Evaluation is bounded to a reasonable step budget; if either side does not
   terminate within it, the verdict is `unknown` and is excluded from the
-  semantic denominator.
+  semantic denominator. These two verdicts are the reported headline. The
+  harness additionally records a single boolean `success` (structurally equal
+  **and** evaluates) as an internal gate; it is not itself the headline verdict,
+  and a semantically equivalent but non-canonical answer is not a failure.
 - results: per-run JSON plus a summary table.
 
 Racket appears only in task fixtures and the scorer (parse + execute to verify
@@ -260,7 +263,7 @@ integration tests establish the pattern future work should follow.
   output goes through the deterministic printer, the `ast-edit` arm has
   essentially zero bracket mismatches by construction. Rather than claim a
   victory there, the experiment takes the primary claim to be step/token cost
-  and success@1 (is the vocabulary expressive enough to reach the expected
+  and success (is the vocabulary expressive enough to reach the expected
   program?), and reports bracket mismatch as a separate reliability cell over a
   few deliberately bracket-dangerous tasks.
 - **Reliability cell.** The bracket-danger cell now retains the original
@@ -275,8 +278,17 @@ integration tests establish the pattern future work should follow.
   is the program's list of top-level forms, so inserting into the root adds a
   top-level form and bootstraps an empty program).
 - **Open follow-ups.** If shape/atom expressiveness proves too weak for the task
-  set, a constrained free-text mode may need revisiting; that decision is
-  deliberately deferred until the first experiment data exists.
+  set, a constrained free-text mode may need revisiting; that decision was
+  deliberately deferred until the first experiment data existed. The first
+  real-model runs now exist, so the review is due: `outline` recognizes `cond`
+  and `let*` but no shape constructs them, there is no general `list` shape,
+  `define` cannot build a function header, and there is no atomic `wrap`.
+  Tracked in `.scratch/lisp-editor/issues/20-shape-vocabulary-v2.md`.
+- **Deferred: cost by construct.** The summary reports a single step/token figure
+  per arm, which averages `atom` tasks (≈2 steps) with `build` tasks (≈12 steps)
+  and hides where the vocabulary is expensive. Splitting the cost summary by
+  `construct` is deliberately deferred to a future decision; the evidence is
+  recorded in the shape-vocabulary ticket above.
 - **Future direction: a custom benchmark language.** A more stable benchmark
   would replace Racket with a purpose-built, Lisp-style ML language whose syntax
   and evaluation are fully specified, so scoring no longer depends on Racket's

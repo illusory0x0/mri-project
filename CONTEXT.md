@@ -111,8 +111,11 @@ One task × arm × driver execution, with its transcript, score, step count, and
 token count.
 _Avoid_: trial, attempt
 
-**Success@1**:
+**Success**:
 A run judged on its single final artifact, reported twice: structurally (the
 candidate and expected parse to the same datum sequence) and semantically (the
-task's probe yields the same result for both).
-_Avoid_: accuracy, pass rate
+task's probe yields the same result for both). A semantically equivalent but
+non-canonical answer is a structural miss, not a failure. The harness also
+records a single boolean `success` (structurally equal **and** evaluates) as an
+internal gate; it is not the headline verdict.
+_Avoid_: accuracy, pass rate, success@1
