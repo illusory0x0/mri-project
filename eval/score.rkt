@@ -8,14 +8,25 @@
 
 (define BUDGET-SECONDS 2)
 
+(define (strip-lang text)
+  (define match (regexp-match #rx"^#lang[^\n]*\n?" text))
+  (if match
+      (substring text (string-length (car match)))
+      text))
+
 (define (read-all path)
-  (call-with-input-file path
+  (call-with-input-string (strip-lang (file->string path))
     (lambda (in)
       (let loop ([acc '()])
         (define datum (read in))
         (if (eof-object? datum)
             (reverse acc)
             (loop (cons datum acc)))))))
+
+(define (read-side path)
+  (with-handlers ([exn:fail?
+                   (lambda (e) (cons 'error (exn-message e)))])
+    (cons 'ok (read-all path))))
 
 (define (paren-mismatch? message)
   (and message
@@ -31,30 +42,58 @@
     (call-with-limits BUDGET-SECONDS 100000000000
       (lambda () (cons 'ok (thunk))))))
 
-(define (eval-program datums)
-  (define namespace (make-base-namespace))
-  (for-each (lambda (datum) (eval datum namespace)) datums)
-  namespace)
+(define (eval-side datums probe)
+  (define program
+    (bounded
+     (lambda ()
+       (define namespace (make-base-namespace))
+       (for-each (lambda (datum) (eval datum namespace)) datums)
+       namespace)))
+  (if (eq? (car program) 'ok)
+      (hasheq 'evaluates #t
+              'probe (and probe (bounded (lambda () (eval probe (cdr program))))))
+      (hasheq 'evaluates #f
+              'probe (and probe program))))
 
-(define (evaluates? datums)
-  (define outcome (bounded (lambda () (eval-program datums) #t)))
-  (and (eq? (car outcome) 'ok) (cdr outcome)))
-
-(define (probe-result path probe)
-  (bounded
-   (lambda ()
-     (define datums (read-all path))
-     (define namespace (eval-program datums))
-     (eval probe namespace))))
-
-(define (semantic-verdict probe)
-  (define candidate (probe-result final-path probe))
-  (define expected (probe-result expected-path probe))
+(define (semantic-verdict candidate expected)
   (cond
-    [(or (eq? (car candidate) 'unknown) (eq? (car expected) 'unknown))
-     "unknown"]
+    [(or (not candidate) (not expected)) "unknown"]
+    [(or (eq? (car candidate) 'unknown) (eq? (car expected) 'unknown)) "unknown"]
     [(equal? candidate expected) "equal"]
     [else "different"]))
+
+(define (build-result)
+  (define final-read (read-side final-path))
+  (cond
+    [(eq? (car final-read) 'error)
+     (define message (cdr final-read))
+     (hasheq 'parsed #f
+             'parenMismatch (paren-mismatch? message)
+             'evaluates #f
+             'structural #f
+             'semantic (if probe-path "unknown" (json-null))
+             'error message)]
+    [else
+     (define final (cdr final-read))
+     (define expected-read (and expected-path (read-side expected-path)))
+     (define expected-ok (and expected-read (eq? (car expected-read) 'ok)))
+     (define probe (and probe-path (car (read-all probe-path))))
+     (define side (eval-side final probe))
+     (define semantic
+       (cond
+         [(not probe-path) (json-null)]
+         [else
+          (define candidate-probe (hash-ref side 'probe))
+          (define expected-probe
+            (and expected-ok
+                 (hash-ref (eval-side (cdr expected-read) probe) 'probe)))
+          (semantic-verdict candidate-probe expected-probe)]))
+     (hasheq 'parsed #t
+             'parenMismatch #f
+             'evaluates (hash-ref side 'evaluates)
+             'structural (and expected-ok (equal? final (cdr expected-read)))
+             'semantic semantic
+             'error #f)]))
 
 (define result
   (with-handlers ([exn:fail?
@@ -64,18 +103,9 @@
                              'parenMismatch (paren-mismatch? message)
                              'evaluates #f
                              'structural #f
-                             'semantic (if probe-path "different" (json-null))
+                             'semantic (if probe-path "unknown" (json-null))
                              'error message))])
-    (define final (read-all final-path))
-    (define expected (and expected-path (read-all expected-path)))
-    (define structural (and expected-path (equal? final expected)))
-    (define probe (and probe-path (call-with-input-file probe-path read)))
-    (hasheq 'parsed #t
-            'parenMismatch #f
-            'evaluates (evaluates? final)
-            'structural structural
-            'semantic (if probe-path (semantic-verdict probe) (json-null))
-            'error #f)))
+    (build-result)))
 
 (write-json result)
 (newline)

@@ -5,7 +5,7 @@ import { MockDriver } from "../eval/drivers/mock.js";
 import { parseArgs } from "../eval/options.js";
 import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
-import { runOne, selectTasks, summarize } from "../eval/runner.js";
+import { runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
 import { scoreArtifact } from "../eval/scorer.js";
 import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
@@ -99,10 +99,54 @@ test("scorer: structural scoring is unchanged by the probe", async () => {
   assert.equal(score.semantic, "equal");
 });
 
+test("scorer: a leading #lang header is ignored for structural comparison", async () => {
+  const score = await scoreArtifact(
+    "#lang racket\n(define (f x) (+ x 1))",
+    task.expected
+  );
+  assert.equal(score.parsed, true);
+  assert.equal(score.parenMismatch, false);
+  assert.equal(score.structural, true);
+  assert.equal(score.success, true);
+});
+
+test("scorer: t18-bootstrap with a #lang header scores on its merits", async () => {
+  const score = await scoreArtifact(
+    "#lang racket\n(define (square x) (* x x))",
+    "(define (square x) (* x x))",
+    "(square 5)"
+  );
+  assert.equal(score.parsed, true);
+  assert.equal(score.structural, true);
+  assert.equal(score.semantic, "equal");
+  assert.equal(score.success, true);
+});
+
+test("scorer: a genuine reader error is still a parse failure", async () => {
+  const score = await scoreArtifact("(define (f x)", task.expected, "(f 2)");
+  assert.equal(score.parsed, false);
+  assert.ok(score.error);
+});
+
+test("scorer: an unreadable candidate is semantically unknown, not different", async () => {
+  const score = await scoreArtifact("(define (f x)", task.expected, "(f 2)");
+  assert.equal(score.parsed, false);
+  assert.equal(score.semantic, "unknown");
+});
+
 test("computeTargetDepth: derives the depth of the changed node", () => {
   assert.equal(computeTargetDepth("(a b)", "(a c)"), 2);
   assert.equal(computeTargetDepth("(a (b c))", "(a (b d))"), 3);
   assert.equal(computeTargetDepth("(a)", "(a)"), 0);
+});
+
+test("computeTargetDepth: insert/delete reports the containing list's depth", () => {
+  const insertInput = "(define (f a b) (+ a b))";
+  const insertExpected = "(define (f a b c) (+ a b c))";
+  const deleteInput = "(define (f x) (let ((a 1) (b 2) (c 3)) (+ a c)))";
+  const deleteExpected = "(define (f x) (let ((a 1) (c 3)) (+ a c)))";
+  assert.equal(computeTargetDepth(insertInput, insertExpected), 2);
+  assert.equal(computeTargetDepth(deleteInput, deleteExpected), 3);
 });
 
 test("runOne: direct arm scores its typed artifact", async () => {
@@ -117,6 +161,7 @@ test("summarize: semantic rate excludes unknown", () => {
     arm: "ast-edit",
     parsed: true,
     parenMismatch: false,
+    hunkFailure: false,
     evaluates: true,
     success: false,
     structural: false,
@@ -181,6 +226,7 @@ test("runOne: diff arm with malformed patch marks failure without throwing", asy
   };
   const result = await runOne(malformedDriver, diffArm, task);
   assert.equal(result.success, false);
+  assert.equal(result.hunkFailure, true);
   assert.match(result.parseError ?? "", /diff apply failed/);
 });
 
@@ -521,6 +567,7 @@ test("summarize: aggregates rates per arm", () => {
     arm,
     parsed,
     parenMismatch: paren,
+    hunkFailure: false,
     evaluates: parsed,
     success,
     structural: success,
@@ -544,8 +591,73 @@ test("summarize: aggregates rates per arm", () => {
   assert.equal(editor.successRate, 0.5);
   assert.equal(editor.parenMismatchRate, 0.5);
   assert.equal(editor.parseErrorRate, 0.5);
+  assert.equal(editor.hunkFailureRate, 0);
   assert.equal(editor.meanSteps, 2);
 
   const direct = summaries.find((summary) => summary.arm === "direct")!;
   assert.equal(direct.successRate, 1);
+});
+
+test("summarize: a hunk-application failure is not a parse error", () => {
+  const base: RunResult = {
+    taskId: "t",
+    arm: "diff",
+    parsed: false,
+    parenMismatch: false,
+    hunkFailure: false,
+    evaluates: false,
+    success: false,
+    structural: false,
+    semantic: null,
+    depth: 0,
+    parseError: null,
+    steps: 1,
+    tokens: 1,
+    finalArtifact: "",
+    transcript: [],
+  };
+  const summaries = summarize([
+    { ...base, hunkFailure: true, parseError: "diff apply failed" },
+    { ...base, parseError: "unexpected end of input" },
+    { ...base, parsed: true, evaluates: true },
+    { ...base, parsed: true, evaluates: true },
+  ]);
+  const summary = summaries.find((item) => item.arm === "diff")!;
+  assert.equal(summary.runs, 4);
+  assert.equal(summary.hunkFailureRate, 0.25);
+  assert.equal(summary.parseErrorRate, 0.25);
+  assert.equal(summary.parenMismatchRate, 0);
+});
+
+test("headline summary excludes exactly the bracket-danger task list", () => {
+  const danger: Task = { ...task, id: "t-danger", bracketDanger: true };
+  const base: RunResult = {
+    taskId: task.id,
+    arm: "ast-edit",
+    parsed: true,
+    parenMismatch: false,
+    hunkFailure: false,
+    evaluates: true,
+    success: true,
+    structural: true,
+    semantic: null,
+    depth: 0,
+    parseError: null,
+    steps: 1,
+    tokens: 1,
+    finalArtifact: "",
+    transcript: [],
+  };
+  const runs = [
+    { ...base, taskId: task.id },
+    { ...base, taskId: danger.id },
+  ];
+  const cell = summarizeBracketDanger(runs, [task, danger]);
+  assert.deepEqual(cell.taskIds, [danger.id]);
+
+  const headline = summarizeHeadline(runs, [task, danger]);
+  const cellRuns = cell.summary.find((item) => item.arm === "ast-edit")!.runs;
+  const headlineRuns = headline.find((item) => item.arm === "ast-edit")!.runs;
+  assert.equal(headlineRuns + cellRuns, runs.length);
+  assert.equal(headlineRuns, 1);
 });

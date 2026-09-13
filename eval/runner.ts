@@ -1,7 +1,7 @@
 import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
-import { computeTargetDepth } from "./depth.js";
+import { withDepth } from "./depth.js";
 import { applyPatch } from "./patch.js";
 import { runProcess } from "./process.js";
 import { scoreArtifact } from "./scorer.js";
@@ -13,6 +13,7 @@ import {
   ArmSummary,
   BracketDangerCell,
   DriverResult,
+  LoadedTask,
   RunResult,
   Task,
   ToolContext,
@@ -100,7 +101,7 @@ export async function runOne(
   meta: RunMeta = {}
 ): Promise<RunResult> {
   const workspace: Workspace = { source: task.input };
-  const depth = task.depth ?? computeTargetDepth(task.input, task.expected);
+  const { depth } = withDepth(task);
   const timeoutMs = meta.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const ctx = buildToolContext(workspace, controller.signal);
@@ -146,6 +147,7 @@ export async function runOne(
       temperature: meta.temperature,
       parsed: false,
       parenMismatch: false,
+      hunkFailure: false,
       evaluates: false,
       success: false,
       structural: false,
@@ -172,6 +174,7 @@ export async function runOne(
         temperature: meta.temperature,
         parsed: false,
         parenMismatch: false,
+        hunkFailure: true,
         evaluates: false,
         success: false,
         structural: false,
@@ -198,6 +201,7 @@ export async function runOne(
     temperature: meta.temperature,
     parsed: score.parsed,
     parenMismatch: score.parenMismatch,
+    hunkFailure: false,
     evaluates: score.evaluates,
     success: score.success,
     structural: score.structural,
@@ -228,12 +232,9 @@ export async function loadJsonDir<T>(
 
 export async function loadTasks(
   dir = path.resolve(process.cwd(), "eval/tasks")
-): Promise<Task[]> {
+): Promise<LoadedTask[]> {
   const tasks = await loadJsonDir<Task>(dir);
-  return tasks.map((task) => ({
-    ...task,
-    depth: computeTargetDepth(task.input, task.expected),
-  }));
+  return tasks.map(withDepth);
 }
 
 export function loadArms(
@@ -275,9 +276,12 @@ export function summarize(results: RunResult[]): ArmSummary[] {
       arm,
       runs: subset.length,
       parseErrorRate:
-        subset.filter((result) => !result.parsed).length / denominator,
+        subset.filter((result) => !result.parsed && !result.hunkFailure).length /
+        denominator,
       parenMismatchRate:
         subset.filter((result) => result.parenMismatch).length / denominator,
+      hunkFailureRate:
+        subset.filter((result) => result.hunkFailure).length / denominator,
       successRate:
         subset.filter((result) => result.success).length / denominator,
       structuralRate:

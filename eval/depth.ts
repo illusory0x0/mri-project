@@ -1,5 +1,6 @@
 import { ListNode, Node } from "../src/ast.js";
 import { parse } from "../src/parser.js";
+import { LoadedTask, Task } from "./types.js";
 
 function firstDivergence(a: Node, b: Node, depth: number): number | null {
   if (a.type === "atom" && b.type === "atom") {
@@ -23,4 +24,8 @@ export function computeTargetDepth(input: string, expected: string): number {
   } catch {
     return 0;
   }
+}
+
+export function withDepth(task: Task): LoadedTask {
+  return { ...task, depth: computeTargetDepth(task.input, task.expected) };
 }

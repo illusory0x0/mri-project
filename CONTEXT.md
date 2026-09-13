@@ -98,8 +98,8 @@ compared.
 _Avoid_: behavioral equality
 
 **Unknown** (semantic verdict):
-Recorded when a side does not terminate within the step budget; excluded from the
-semantic denominator.
+Recorded when a side does not terminate within the step budget, or cannot be read
+at all; excluded from the semantic denominator.
 _Avoid_: timeout, failure
 
 **Driver**:

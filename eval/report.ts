@@ -1,6 +1,6 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { computeTargetDepth } from "./depth.js";
+import { withDepth } from "./depth.js";
 import {
   loadArms,
   loadJsonDir,
@@ -9,7 +9,7 @@ import {
   summarizeHeadline,
 } from "./runner.js";
 import { TOOL_SPECS } from "./tools.js";
-import { ARM_NAMES, ReportData, RunResult, Task } from "./types.js";
+import { ARM_NAMES, LoadedTask, ReportData, RunResult } from "./types.js";
 
 const CLIENT_PATH = path.join(import.meta.dirname, "report.client.js");
 
@@ -39,6 +39,7 @@ main { padding: 0 28px 60px; max-width: 1200px; }
 p.sub { color: var(--muted); margin: 0 0 4px; }
 section.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 18px 0; }
 .note { color: var(--muted); font-size: 12.5px; margin: 10px 0 0; }
+.note a { color: var(--accent); }
 table.grid { width: 100%; border-collapse: collapse; }
 table.grid th, table.grid td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
 table.grid th { color: var(--muted); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
@@ -203,16 +204,17 @@ async function main(): Promise<void> {
   const armDefs = await loadArms(armsDir);
   const tasksById = new Map(allTasks.map((task) => [task.id, task]));
   const taskIds = [...new Set(runs.map((run) => run.taskId))].sort();
-  const tasks = taskIds.map((id): Task => {
-    const task = tasksById.get(id) ?? {
+  const tasks = taskIds.map((id): LoadedTask => {
+    const task = tasksById.get(id);
+    if (task) return task;
+    return withDepth({
       id,
-      locate: "explicit" as const,
-      construct: "atom" as const,
+      locate: "explicit",
+      construct: "atom",
       instruction: "",
       input: "",
       expected: "",
-    };
-    return { ...task, depth: task.depth ?? computeTargetDepth(task.input, task.expected) };
+    });
   });
 
   const data: ReportData = {

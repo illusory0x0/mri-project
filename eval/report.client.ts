@@ -1,4 +1,11 @@
-import type { Arm, ArmSummary, ReportData, RunResult, Task } from "./types.js";
+import type {
+  Arm,
+  ArmSummary,
+  ReportData,
+  RunResult,
+  SemanticVerdict,
+  Task,
+} from "./types.js";
 
 interface TranscriptMessage {
   role?: string;
@@ -43,6 +50,11 @@ const ROLE_LABEL: Record<string, string> = {
   user: "用户提示",
   assistant: "助手",
   tool: "工具返回",
+};
+const SEMANTIC_LABEL: Record<SemanticVerdict, string> = {
+  equal: "等价",
+  different: "不等价",
+  unknown: "未知",
 };
 
 const HTML_ESCAPES: Record<string, string> = {
@@ -150,7 +162,12 @@ function summaryTable(rows: ArmSummary[]): string {
 }
 
 function renderSummary(): void {
-  document.getElementById("summary")!.innerHTML = summaryTable(DATA.summary);
+  const excluded = DATA.bracketDanger.taskIds.length;
+  const note =
+    '<p class="note">上方汇总已排除 ' +
+    excluded +
+    ' 个括号危险任务（见 <a href="#bracket-danger">括号危险可靠性单元</a>）。</p>';
+  document.getElementById("summary")!.innerHTML = summaryTable(DATA.summary) + note;
 }
 
 function renderBracketDanger(): void {
@@ -167,9 +184,9 @@ function renderBracketDanger(): void {
     cell.taskIds.length +
     " 个任务：" +
     esc(cell.taskIds.join(", ")) +
-    "。这些任务已从上方表格中排除，其解析失败率与括号不匹配率在此单独统计。</p>";
+    "。这些任务已从上方表格中排除，其解析失败率、括号不匹配率与补丁应用失败率在此单独统计。</p>";
   let rates =
-    '<table class="grid"><thead><tr><th>编辑方式</th><th class="num">解析失败率</th><th class="num">括号不匹配率</th></tr></thead><tbody>';
+    '<table class="grid"><thead><tr><th>编辑方式</th><th class="num">解析失败率</th><th class="num">括号不匹配率</th><th class="num">补丁应用失败率</th></tr></thead><tbody>';
   cell.summary.forEach(function (row) {
     const c = armColor(row.arm);
     rates +=
@@ -177,6 +194,7 @@ function renderBracketDanger(): void {
       '<td class="armname" style="color:' + c + '">' + esc(armLabel(row.arm)) + "</td>" +
       '<td class="num">' + fmt(row.parseErrorRate * 100) + "%</td>" +
       '<td class="num">' + fmt(row.parenMismatchRate * 100) + "%</td>" +
+      '<td class="num">' + fmt(row.hunkFailureRate * 100) + "%</td>" +
       "</tr>";
   });
   box.innerHTML = html + rates + "</tbody></table>";
@@ -198,7 +216,7 @@ function renderMatrix(): void {
       '<div class="ins">' + esc(task.instruction) + "</div>" +
       '<div class="tags"><span class="tag">' + esc(task.construct) + "</span>" +
       '<span class="tag alt">' + esc(task.locate) + "</span>" +
-      (task.depth != null ? '<span class="tag alt">depth ' + task.depth + "</span>" : "") +
+      '<span class="tag alt">depth ' + task.depth + "</span>" +
       (task.bracketDanger ? '<span class="tag">bracket</span>' : "") +
       "</div>" +
       "</td>";
@@ -505,13 +523,7 @@ function openDetail(taskId: string, arm: string): void {
 
   const chips = el("div", "chips");
   const semanticLabel =
-    run.semantic == null
-      ? "无探针"
-      : run.semantic === "equal"
-        ? "等价"
-        : run.semantic === "different"
-          ? "不等价"
-          : "未知";
+    run.semantic == null ? "无探针" : SEMANTIC_LABEL[run.semantic];
   (
     [
       ["步数", fmt(run.steps)],

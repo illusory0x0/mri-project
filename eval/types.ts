@@ -13,8 +13,9 @@ export interface Task {
   expected: string;
   probe?: string;
   bracketDanger?: boolean;
-  depth?: number;
 }
+
+export type LoadedTask = Task & { depth: number };
 
 export type ArmName = "direct" | "ast-edit" | "text-edit" | "diff";
 
@@ -69,6 +70,7 @@ export interface RunResult {
   temperature?: number;
   parsed: boolean;
   parenMismatch: boolean;
+  hunkFailure: boolean;
   evaluates: boolean;
   success: boolean;
   structural: boolean;
@@ -96,6 +98,7 @@ export interface ArmSummary {
   runs: number;
   parseErrorRate: number;
   parenMismatchRate: number;
+  hunkFailureRate: number;
   successRate: number;
   structuralRate: number;
   semanticRate: number;
@@ -117,7 +120,7 @@ export interface ReportData {
   armNames: string[];
   armDefs: Arm[];
   toolSpecs: Record<string, ToolSpec>;
-  tasks: Task[];
+  tasks: LoadedTask[];
   runs: RunResult[];
   summary: ArmSummary[];
   bracketDanger: BracketDangerCell;
