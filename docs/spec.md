@@ -23,9 +23,10 @@ AST through a deterministic printer, the emitted source is always well-formed �
 the agent never balances brackets around deep nesting. An `outline` command
 exposes the tree's paths so the agent can choose where to edit.
 
-A three-arm experiment (direct text edit vs. `lisp-editor` vs. `sed`/`awk`) on
-4–6-level nested tasks tests the hypothesis that structural editing lets an agent
-edit more reliably and with less effort than text manipulation.
+A four-arm experiment (whole-file rewrite vs. `lisp-editor` vs. `sed`/`awk` vs.
+unified diff) on 4–6-level nested tasks tests the hypothesis that structural
+editing lets an agent edit more reliably and with less effort than text
+manipulation.
 
 ## User Stories
 
@@ -166,12 +167,13 @@ retryable.
 
 The command is exposed as the `lisp-editor` bin.
 
-**Experiment harness.** A three-arm harness lives alongside the tool:
+**Experiment harness.** A four-arm harness lives alongside the tool:
 - tasks: a fixed set of nested edit tasks, each with input source, instruction,
   expected result, and two annotations: `locate` (`explicit` | `described`) and
   `construct` (`atom` | `wrap` | `build` | `copy` | `multi`).
 - arms: `direct` (agent outputs whole-file text), `ast-edit` (agent drives
-  `lisp-editor`), `text-edit` (agent uses shell/`sed`/`awk`).
+  `lisp-editor`), `text-edit` (agent uses shell/`sed`/`awk`), `diff` (agent
+  replies with a unified diff that the harness applies).
 - runner: for each `(task × arm)`, runs the agent with the arm's
   prompt/tools, captures the transcript and final artifact, and scores it.
 - results: per-run JSON plus a summary table.
@@ -224,7 +226,7 @@ integration tests establish the pattern future work should follow.
   malformed programs.
 - **A caveat about the headline metric.** Because all construction goes through
   shapes and parameterized atoms and all output goes through the deterministic
-  printer, the `editor` arm is expected to have essentially zero bracket
+  printer, the `ast-edit` arm is expected to have essentially zero bracket
   mismatches by construction. The bracket-mismatch rate therefore risks being a
   foregone conclusion; `success@1`, step count, and token count — i.e. whether
   the vocabulary is expressive enough and whether the agent reaches the right

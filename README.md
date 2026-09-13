@@ -12,12 +12,12 @@ pnpm run build     # compile TypeScript to dist/
 pnpm test          # build + run the test suite
 ```
 
-## Evaluating the topics
+## Evaluating the tasks
 
-The `eval/` harness runs a model against a set of **topics** (tasks) using
-several **arms** (editing strategies), then scores the results.
+The `eval/` harness runs a model against a set of **tasks** using several
+**arms** (editing strategies), then scores the results.
 
-- **Topics** live in `eval/tasks/*.json`. Each task has an `input` program,
+- **Tasks** live in `eval/tasks/*.json`. Each task has an `input` program,
   an `expected` program, an `instruction`, and two difficulty labels:
   `locate` (`explicit` / `described`) and `construct`
   (`atom` / `wrap` / `build` / `copy` / `multi`).
