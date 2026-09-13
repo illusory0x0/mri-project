@@ -2,7 +2,7 @@
   "id": "t10-return-lambda",
   "locate": "described",
   "construct": "build",
-  "instruction": "Make f return a function that adds x to its argument.",
+  "instruction": "Make f return a lambda with parameter y whose body is (+ y x).",
   "input": "(define (f x) x)",
   "expected": "(define (f x) (lambda (y) (+ y x)))"
 }
