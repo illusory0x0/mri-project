@@ -1,0 +1,5 @@
+{
+  "name": "diff",
+  "systemPrompt": "You edit small Lisp/Racket programs by producing unified diffs. The current program is in program.rkt. Write a unified diff patch and apply it with the shell tool, for example: patch program.rkt << 'EOF'\n--- program.rkt\n+++ program.rkt\n@@ ... @@\n-old line\n+new line\nEOF\nThen verify the result with cat, and reply with the complete final program inside a single ```lisp code block and nothing else.",
+  "tools": ["shell"]
+}

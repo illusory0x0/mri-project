@@ -19,8 +19,8 @@ interface ViewerData {
 const CLIENT = `
 "use strict";
 var DATA = /*__DATA__*/;
-var ARM_LABEL = { direct: "direct · 直接改写", editor: "editor · 结构化编辑", sedawk: "sedawk · Shell 编辑" };
-var ARM_COLOR = { direct: "#58a6ff", editor: "#bc8cff", sedawk: "#3fb950" };
+var ARM_LABEL = { direct: "direct · 直接改写", editor: "editor · 结构化编辑", sedawk: "sedawk · Shell 编辑", diff: "diff · Unified Diff" };
+var ARM_COLOR = { direct: "#58a6ff", editor: "#bc8cff", sedawk: "#3fb950", diff: "#f0883e" };
 var ROLE_LABEL = { system: "系统提示", user: "用户提示", assistant: "助手", tool: "工具返回" };
 
 function esc(v) {

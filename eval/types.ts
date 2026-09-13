@@ -11,9 +11,9 @@ export interface Task {
   expected: string;
 }
 
-export type ArmName = "direct" | "editor" | "sedawk";
+export type ArmName = "direct" | "editor" | "sedawk" | "diff";
 
-export const ARM_NAMES: ArmName[] = ["direct", "editor", "sedawk"];
+export const ARM_NAMES: ArmName[] = ["direct", "editor", "sedawk", "diff"];
 
 export interface Workspace {
   source: string;
