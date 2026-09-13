@@ -4,16 +4,17 @@
   "private": true,
   "type": "module",
   "description": "Stateless structural editor for a Lisp subset",
+  "packageManager": "pnpm@10.13.1",
   "bin": {
     "lisp-editor": "./dist/src/cli.js"
   },
   "scripts": {
     "build": "tsc",
     "typecheck": "tsc --noEmit",
-    "test": "npm run build && node --test dist/test/*.test.js",
-    "eval": "npm run build && node dist/eval/run.js",
-    "report": "npm run build && node dist/eval/report.js",
-    "viewer": "npm run build && node dist/eval/viewer.js"
+    "test": "pnpm run build && node --test dist/test/*.test.js",
+    "eval": "pnpm run build && node dist/eval/run.js",
+    "report": "pnpm run build && node dist/eval/report.js",
+    "viewer": "pnpm run build && node dist/eval/viewer.js"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

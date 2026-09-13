@@ -7,9 +7,9 @@ agent can edit programs by manipulating structure instead of raw text.
 ## Setup
 
 ```sh
-npm install
-npm run build      # compile TypeScript to dist/
-npm test           # build + run the test suite
+pnpm install
+pnpm run build     # compile TypeScript to dist/
+pnpm test          # build + run the test suite
 ```
 
 ## Evaluating the topics
