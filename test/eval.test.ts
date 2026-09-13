@@ -119,6 +119,131 @@ test("openai driver: retries an empty response and eventually succeeds", async (
   }
 });
 
+const chatResponse = (content: string | null) => ({
+  ok: true,
+  status: 200,
+  async json() {
+    return {
+      choices: [{ message: { role: "assistant", content } }],
+      usage: { total_tokens: 3 },
+    };
+  },
+});
+
+test("openai driver: retries a network failure and eventually succeeds", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    if (calls < 2) throw new Error("fetch failed");
+    return chatResponse("```lisp\n(done)\n```");
+  }) as unknown as typeof fetch;
+
+  try {
+    const driver = new OpenAICompatibleDriver({
+      baseUrl: "http://example.test",
+      apiKey: "test",
+      model: "test",
+      maxSteps: 3,
+      retryDelayMs: 1,
+    });
+    const result = await driver.run({
+      arm: directArm,
+      task,
+      tools: [],
+      ctx: { async exec() {
+        return "{}";
+      } },
+      seed: 0,
+    });
+    assert.equal(calls, 2);
+    assert.equal(result.finalArtifact, "(done)");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("openai driver: retries a 429 response and eventually succeeds", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    if (calls < 2) {
+      return {
+        ok: false,
+        status: 429,
+        async text() {
+          return "rate limited";
+        },
+      };
+    }
+    return chatResponse("```lisp\n(done)\n```");
+  }) as unknown as typeof fetch;
+
+  try {
+    const driver = new OpenAICompatibleDriver({
+      baseUrl: "http://example.test",
+      apiKey: "test",
+      model: "test",
+      maxSteps: 3,
+      retryDelayMs: 1,
+    });
+    const result = await driver.run({
+      arm: directArm,
+      task,
+      tools: [],
+      ctx: { async exec() {
+        return "{}";
+      } },
+      seed: 0,
+    });
+    assert.equal(calls, 2);
+    assert.equal(result.finalArtifact, "(done)");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("openai driver: does not retry a permanent 400 response", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    return {
+      ok: false,
+      status: 400,
+      async text() {
+        return "bad request";
+      },
+    };
+  }) as unknown as typeof fetch;
+
+  try {
+    const driver = new OpenAICompatibleDriver({
+      baseUrl: "http://example.test",
+      apiKey: "test",
+      model: "test",
+      maxSteps: 3,
+      retryDelayMs: 1,
+    });
+    await assert.rejects(
+      driver.run({
+        arm: directArm,
+        task,
+        tools: [],
+        ctx: { async exec() {
+          return "{}";
+        } },
+        seed: 0,
+      }),
+      /LLM request failed: 400/
+    );
+    assert.equal(calls, 1);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("openai driver: exhausting maxSteps returns a result instead of throwing", async () => {
   const originalFetch = globalThis.fetch;
   let calls = 0;

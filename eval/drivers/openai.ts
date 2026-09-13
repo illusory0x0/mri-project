@@ -34,6 +34,10 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+function isRetryableStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
 export class OpenAICompatibleDriver implements AgentDriver {
   constructor(private readonly options: OpenAICompatibleOptions) {}
 
@@ -72,24 +76,31 @@ export class OpenAICompatibleDriver implements AgentDriver {
       if (toolDefs.length > 0) body.tools = toolDefs;
 
       let message: ChatMessage | undefined;
+      let lastError = "LLM response had no message";
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
         if (attempt > 0) await sleep(retryDelayMs * attempt);
 
-        const response = await fetch(
-          `${this.options.baseUrl.replace(/\/$/, "")}/chat/completions`,
-          {
-            method: "POST",
-            headers: {
-              "content-type": "application/json",
-              authorization: `Bearer ${this.options.apiKey}`,
-            },
-            body: JSON.stringify(body),
-          }
-        );
-        if (!response.ok) {
-          throw new Error(
-            `LLM request failed: ${response.status} ${await response.text()}`
+        let response: Response;
+        try {
+          response = await fetch(
+            `${this.options.baseUrl.replace(/\/$/, "")}/chat/completions`,
+            {
+              method: "POST",
+              headers: {
+                "content-type": "application/json",
+                authorization: `Bearer ${this.options.apiKey}`,
+              },
+              body: JSON.stringify(body),
+            }
           );
+        } catch (error) {
+          lastError = error instanceof Error ? error.message : String(error);
+          continue;
+        }
+        if (!response.ok) {
+          lastError = `LLM request failed: ${response.status} ${await response.text()}`;
+          if (isRetryableStatus(response.status)) continue;
+          throw new Error(lastError);
         }
 
         const data = (await response.json()) as ChatResponse;
@@ -98,9 +109,7 @@ export class OpenAICompatibleDriver implements AgentDriver {
         if (message) break;
       }
       if (!message) {
-        throw new Error(
-          `LLM response had no message after ${maxRetries + 1} attempts`
-        );
+        throw new Error(`${lastError} after ${maxRetries + 1} attempts`);
       }
       messages.push(message);
       if (typeof message.content === "string" && message.content.trim()) {
