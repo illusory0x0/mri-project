@@ -52,8 +52,9 @@ table.grid tbody tr:hover { background: var(--panel2); }
 .mval { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-variant-numeric: tabular-nums; z-index: 10; white-space: nowrap; text-shadow: 0 0 4px rgba(0,0,0,.8), 0 0 4px rgba(0,0,0,.8); }
 .bar { position: absolute; inset: 0; width: 100%; height: 100%; background: #21262d; border-radius: 4px; overflow: hidden; z-index: 0; }
 .bar span { display: block; height: 100%; border-radius: 4px; }
-.bar.health { display: flex; gap: 2px; background: #161b22; padding: 2px 0; overflow: visible; border-radius: 4px; }
-.bar.health .seg { flex: 1; height: calc(100% - 4px); background: #2d333b; border: 1px solid #3d444d; border-radius: 2px; }
+.score { font-variant-numeric: tabular-nums; font-weight: 600; }
+.score.ok { color: var(--green); }
+.score.bad { color: var(--red); }
 .taskcell { max-width: 360px; }
 .tid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); }
 .ins { color: var(--muted); font-size: 12.5px; }

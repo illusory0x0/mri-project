@@ -106,15 +106,10 @@ function bar(value: number, max: number, color: string): string {
   if (w > 0 && w < 2) w = 2;
   return '<div class="bar"><span style="width:' + w + "%;background:" + color + '"></span></div>';
 }
-function healthBar(value: number, max: number, color: string): string {
-  const filled = max > 0 ? Math.round((value / max) * 10) : 0;
-  let html = '<div class="bar health">';
-  for (let i = 0; i < 10; i++) {
-    if (i < filled) html += '<span class="seg on" style="background:' + color + '"></span>';
-    else html += '<span class="seg"></span>';
-  }
-  html += "</div>";
-  return html;
+function scoreCell(value: number, total: number): string {
+  const numerator = Math.round(value * total);
+  const cls = total > 0 && numerator >= total ? "ok" : "bad";
+  return '<span class="score ' + cls + '">' + numerator + "/" + total + "</span>";
 }
 
 function renderStats(): void {
@@ -138,15 +133,14 @@ function summaryTable(rows: ArmSummary[]): string {
   rows.forEach(function (row) {
     const c = armColor(row.arm);
     const semantic = row.semanticScored
-      ? '<div class="metric">' + healthBar(row.semanticRate, 1, row.semanticRate === 1 ? "#3fb950" : "#f85149") + "</div>" +
-        '<span class="mini">n=' + row.semanticScored +
-        (row.semanticUnknown ? " · 未知 " + row.semanticUnknown : "") + "</span>"
+      ? scoreCell(row.semanticRate, row.semanticScored) +
+        (row.semanticUnknown ? '<div class="mini">未知 ' + row.semanticUnknown + "</div>" : "")
       : '<span class="muted">—</span>';
     html +=
       "<tr>" +
       '<td class="armname" style="color:' + c + '">' + esc(armLabel(row.arm)) + "</td>" +
-      '<td class="num"><div class="metric">' + healthBar(row.successRate, 1, row.successRate === 1 ? "#3fb950" : "#f85149") + "</div></td>" +
-      '<td class="num"><div class="metric">' + healthBar(row.structuralRate, 1, row.structuralRate === 1 ? "#3fb950" : "#f85149") + "</div></td>" +
+      '<td class="num">' + scoreCell(row.successRate, row.runs) + "</td>" +
+      '<td class="num">' + scoreCell(row.structuralRate, row.runs) + "</td>" +
       '<td class="num">' + semantic + "</td>" +
       '<td class="num">' + fmt(row.meanSteps) + "</td>" +
       '<td class="num"><div class="metric">' + bar(row.meanTokens, maxTok, c) + '<span class="mval">' + row.meanTokens.toLocaleString() + "</span></div></td>" +
