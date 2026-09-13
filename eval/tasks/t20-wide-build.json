@@ -2,7 +2,7 @@
   "id": "t20-wide-build",
   "locate": "described",
   "construct": "build",
-  "instruction": "Replace the body of f with the sum 1 + 2 + 3 + 4 + 5 + 6 + 7, keeping the final 0.",
+  "instruction": "Replace the body of f with the nested sum 1 + (2 + (3 + (4 + (5 + (6 + (7 + 0))))))), so the existing 0 stays the innermost term and each number 1 through 7 wraps the next.",
   "input": "(define (f x)\n  0)",
   "expected": "(define (f x) (+ 1 (+ 2 (+ 3 (+ 4 (+ 5 (+ 6 (+ 7 0))))))))",
   "probe": "(f 0)",
