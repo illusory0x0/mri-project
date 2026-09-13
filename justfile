@@ -27,3 +27,7 @@ eval *args: build
 # Build, then generate eval/report.html.
 report: build
 	node dist/eval/report.js
+
+# Count lines of code, skipping build output, deps, and scratch/generated files.
+count-lines:
+	cloc . --exclude-dir=node_modules,dist,.git,.scratch,coverage
