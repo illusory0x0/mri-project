@@ -27,8 +27,8 @@ A four-arm experiment (whole-file rewrite vs. `lisp-editor` vs. `sed`/`awk` vs.
 unified diff) on deeply nested tasks tests the hypothesis that structural
 editing lets an agent edit with less effort and greater expressiveness than text
 manipulation. Bracket safety is not the headline: the `ast-edit` arm cannot
-produce a bracket mismatch by construction, so it is reported as a separate cell
-(see ticket 17).
+produce a bracket mismatch by construction, so it is reported as a separate
+reliability cell.
 
 ## User Stories
 
