@@ -1,5 +1,11 @@
+export type LocateDifficulty = "explicit" | "described";
+
+export type ConstructKind = "atom" | "wrap" | "build" | "copy" | "multi";
+
 export interface Task {
   id: string;
+  locate: LocateDifficulty;
+  construct: ConstructKind;
   instruction: string;
   input: string;
   expected: string;

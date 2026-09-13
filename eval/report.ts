@@ -1,5 +1,5 @@
 import path from "node:path";
-import { loadJsonDir, summarize } from "./runner.js";
+import { loadJsonDir, loadTasks, summarize } from "./runner.js";
 import { RunResult } from "./types.js";
 
 function percent(value: number): string {
@@ -103,9 +103,55 @@ async function main(): Promise<void> {
     process.stdout.write(taskId.padEnd(18) + " " + cells.join(" ") + "\n");
   }
 
+  const taskById = new Map((await loadTasks()).map((task) => [task.id, task]));
+  const writeGroup = (
+    label: string,
+    groups: string[],
+    keyOf: (result: RunResult) => string
+  ): void => {
+    process.stdout.write(`\nby ${label}:\n`);
+    const widths = [12, 10, 6, 11, 8, 9];
+    process.stdout.write(
+      ["group", "arm", "runs", "success@1", "steps", "tokens"]
+        .map((header, index) => header.padEnd(widths[index]))
+        .join(" ") + "\n"
+    );
+    for (const key of groups) {
+      for (const arm of arms) {
+        const subset = results.filter(
+          (result) => keyOf(result) === key && result.arm === arm
+        );
+        if (subset.length === 0) continue;
+        const mean = (select: (result: RunResult) => number): number =>
+          subset.reduce((sum, result) => sum + select(result), 0) /
+          subset.length;
+        process.stdout.write(
+          [
+            key.padEnd(widths[0]),
+            arm.padEnd(widths[1]),
+            String(subset.length).padEnd(widths[2]),
+            percent(rate(subset)).padEnd(widths[3]),
+            fixed(mean((result) => result.steps)).padEnd(widths[4]),
+            fixed(mean((result) => result.tokens)).padEnd(widths[5]),
+          ].join(" ") + "\n"
+        );
+      }
+    }
+  };
+
+  writeGroup(
+    "construct",
+    ["atom", "wrap", "build", "copy", "multi"],
+    (result) => taskById.get(result.taskId)?.construct ?? "(unknown)"
+  );
+  writeGroup(
+    "locate",
+    ["explicit", "described"],
+    (result) => taskById.get(result.taskId)?.locate ?? "(unknown)"
+  );
+
   process.stdout.write(`\nfrom ${results.length} runs in ${dir}\n`);
 }
-
 main().catch((error) => {
   process.stderr.write(`${error instanceof Error ? error.message : error}\n`);
   process.exitCode = 1;

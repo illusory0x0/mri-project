@@ -18,6 +18,8 @@ const sedawkArm: Arm = { name: "sedawk", systemPrompt: "test", tools: ["shell"] 
 
 const task: Task = {
   id: "t-increment",
+  locate: "explicit",
+  construct: "wrap",
   instruction: "increment",
   input: "(define (f x) x)",
   expected: "(define (f x) (+ x 1))",

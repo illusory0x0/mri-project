@@ -1,0 +1,8 @@
+{
+  "id": "t11-sum-three",
+  "locate": "explicit",
+  "construct": "build",
+  "instruction": "Change the body to sum a, b, and 1.",
+  "input": "(define (f a b) 0)",
+  "expected": "(define (f a b) (+ a b 1))"
+}

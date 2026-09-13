@@ -166,8 +166,9 @@ retryable.
 The command is exposed as the `lisp-editor` bin.
 
 **Experiment harness.** A three-arm harness lives alongside the tool:
-- tasks: a fixed set of 4–6-level nested edit tasks, each with input source,
-  instruction, and expected result.
+- tasks: a fixed set of nested edit tasks, each with input source, instruction,
+  expected result, and two annotations: `locate` (`explicit` | `described`) and
+  `construct` (`atom` | `wrap` | `build` | `copy` | `multi`).
 - arms: `direct` (agent outputs whole-file text), `editor` (agent drives
   `lisp-editor`), `sedawk` (agent uses shell/`sed`/`awk`).
 - runner: for each `(task × arm)`, runs the agent with the arm's
@@ -234,6 +235,9 @@ integration tests establish the pattern future work should follow.
   claim is not yet testable; and each task mixes reference-resolution difficulty
   with construction difficulty, which confounds the effort comparison. See
   issue 10.
+- **Known capability gaps.** Structural delete (a hole is only a placeholder,
+  it does not remove a list element) and root bootstrap from an empty file do
+  not work; see issue 11.
 - **Open follow-ups.** If shape/atom expressiveness proves too weak for the task
   set, a constrained free-text mode may need revisiting; that decision is
   deliberately deferred until the first experiment data exists.

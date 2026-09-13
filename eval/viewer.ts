@@ -110,7 +110,10 @@ function renderMatrix() {
   html += "</tr></thead><tbody>";
   DATA.tasks.forEach(function (task) {
     html += '<tr><td class="taskcell"><div class="tid">' + esc(task.id) + '</div>'
-      + '<div class="ins">' + esc(task.instruction) + "</div></td>";
+      + '<div class="ins">' + esc(task.instruction) + '</div>'
+      + '<div class="tags"><span class="tag">' + esc(task.construct) + '</span>'
+      + '<span class="tag alt">' + esc(task.locate) + '</span></div>'
+      + "</td>";
     DATA.armNames.forEach(function (a) {
       var cellRuns = DATA.runs.filter(function (r) { return r.taskId === task.id && r.arm === a; });
       if (!cellRuns.length) { html += '<td class="na">—</td>'; return; }
@@ -470,6 +473,9 @@ table.grid tbody tr:hover { background: var(--panel2); }
 .taskcell { max-width: 360px; }
 .tid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--accent); }
 .ins { color: var(--muted); font-size: 12.5px; }
+.tags { display: flex; gap: 6px; margin-top: 6px; }
+.tag { font-size: 10.5px; letter-spacing: .03em; text-transform: uppercase; color: var(--accent); background: #1f2a3a; border: 1px solid #2d4a6b; border-radius: 20px; padding: 1px 8px; }
+.tag.alt { color: var(--muted); background: #20242b; border-color: var(--border); }
 .cell {
   width: 100%; cursor: pointer; background: var(--panel2); border: 1px solid var(--border);
   border-radius: 8px; padding: 7px 8px; color: var(--fg); display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
@@ -609,7 +615,8 @@ async function main(): Promise<void> {
   const taskIds = [...new Set(runs.map((run) => run.taskId))].sort();
   const tasks = taskIds.map(
     (id): Task =>
-      tasksById.get(id) ?? { id, instruction: "", input: "", expected: "" }
+      tasksById.get(id) ??
+        { id, locate: "explicit", construct: "atom", instruction: "", input: "", expected: "" }
   );
 
   const data: ViewerData = {
