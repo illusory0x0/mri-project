@@ -6,7 +6,7 @@ Status: ready-for-agent
 
 An AI agent editing Lisp/Racket source with ordinary text tools (whole-file
 text-diff rewrites, `sed`, `awk`) frequently produces bracket mismatches,
-especially once expressions nest 4–6 levels deep. Text edits operate on
+especially once expressions nest deeply. Text edits operate on
 characters, not structure, so one misplaced parenthesis silently corrupts the
 whole program and the agent has no structural handle on "the node I mean". The
 agent spends effort counting parens instead of expressing intent.
@@ -24,7 +24,7 @@ the agent never balances brackets around deep nesting. An `outline` command
 exposes the tree's paths so the agent can choose where to edit.
 
 A four-arm experiment (whole-file rewrite vs. `lisp-editor` vs. `sed`/`awk` vs.
-unified diff) on 4–6-level nested tasks tests the hypothesis that structural
+unified diff) on deeply nested tasks tests the hypothesis that structural
 editing lets an agent edit with less effort and greater expressiveness than text
 manipulation. Bracket safety is not the headline: the `ast-edit` arm cannot
 produce a bracket mismatch by construction, so it is reported as a separate cell
@@ -78,7 +78,7 @@ produce a bracket mismatch by construction, so it is reported as a separate cell
     whole-file operations are expressible.
 22. As a tool author, I want integer-indexed child paths, so that addressing is
     predictable across edits.
-23. As an experimenter, I want a fixed task set of 4–6-level nested edits, so
+23. As an experimenter, I want a fixed task set of deeply nested edits, so
     that the nesting-depth hypothesis is exercised directly.
 24. As an experimenter, I want the same model, prompt, and temperature across
     arms, so that the only variable is the editing interface.
@@ -109,7 +109,7 @@ dependencies. Racket is used only inside the experiment harness.
 `list` of nodes. Comments and whitespace are discarded at parse time. Quote and
 quasiquote are excluded (the tool edits code; it is not an interpreter and does
 not do metaprogramming). There is no type or scope checking; it is a purely
-syntactic editor.
+syntactic editor (ADR 0007).
 
 **Holes.** A hole is any identifier beginning with `_`. Holes are a naming
 convention only — nothing validates or tracks them. Shape skeletons are emitted
@@ -167,7 +167,7 @@ from shapes and atoms.
 **Supported subset.** `define`, `lambda`, `let`, `let*`, `if`, `cond`,
 variables, application, numbers, strings, and symbols — enough to write simple
 algorithms and simple file-reading programs. No macros, no `require`, no
-quote/quasiquote.
+quote/quasiquote (ADR 0007).
 
 **Error and atomicity semantics.** Any invalid request (malformed input,
 unresolvable path, out-of-range index, deleting the root, inserting into a
@@ -190,7 +190,9 @@ The command is exposed as the `lisp-editor` bin.
   expected result, and two annotations: `locate` (`explicit` | `described`) and
   `construct` (`atom` | `wrap` | `build` | `copy` | `multi`). A task may also
   carry an optional `semantic` probe: an expression evaluated against both the
-  candidate and the expected program.
+  candidate and the expected program. The harness also computes each task's
+  target depth and records it as report metadata; depth is not an experimental
+  factor.
 - arms: `direct` (agent outputs whole-file text), `ast-edit` (agent drives
   `lisp-editor`), `text-edit` (agent uses shell/`sed`/`awk`), `diff` (agent
   replies with a unified diff that the harness applies).
