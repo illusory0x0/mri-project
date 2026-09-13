@@ -88,7 +88,7 @@ edit more reliably and with less effort than text manipulation.
     claim is quantified.
 28. As an experimenter, I want Racket used only for parsing and evaluating
     results during scoring, so that the product has no Racket runtime dependency.
-29. As an experimenter, I want per-task, per-arm, per-seed result artifacts, so
+29. As an experimenter, I want per-task, per-arm result artifacts, so
     that runs are reproducible and inspectable.
 
 ## Implementation Decisions
@@ -106,7 +106,8 @@ syntactic editor.
 **Holes.** A hole is any identifier beginning with `_`. Holes are a naming
 convention only — nothing validates or tracks them. Shape skeletons are emitted
 with named holes (e.g. `_param`, `_body`) for readability. `replace` with a hole
-is the delete operation.
+is the delete operation. `outline` surfaces holes as their own kind
+(`kind: "hole"`), distinct from ordinary symbols.
 
 **Addressing.** A path is an array of child indices serialized as JSON, e.g.
 `[1,2,3]`. The empty path `[]` addresses the root. Paths are resolved against the
@@ -120,8 +121,11 @@ session, no cursor, no `finish` step, no `select` step: the path is supplied on
 each invocation.
 
 **Commands.**
-- `lisp-editor outline` — prints the tree as JSON, one entry per node:
-  `{ path, tag, hole }`, where `hole` marks `_`-prefixed identifiers.
+- `lisp-editor outline` — prints the tree as JSON, one entry per node, as a
+  discriminated union. A list node is `{ path, kind: "list", head }`, where
+  `head` is the head symbol's name (or `null`). An atom node is
+  `{ path, kind, value }`, where `kind` is `"symbol"`, `"number"`, `"string"`,
+  or `"hole"` for `_`-prefixed identifiers.
 - `lisp-editor replace <shape> --out <astpath>` — replaces the node at
   `<astpath>` with the shape's skeleton; unspecified children are holes.
 - `lisp-editor replace --in <astpath> --out <astpath>` — copies the node at
@@ -132,7 +136,7 @@ each invocation.
 - `if` → `(if _cond _then _else)`
 - `define` → `(define _name _body)`
 - `let` → `(let ((_name _value)) _body)`
-- `apply` → `(_func _args)`
+- `apply:<n>` → `(_func _arg1 ... _argn)`, e.g. `apply:2` → `(_func _arg1 _arg2)`
 - `hole` → a bare `_` placeholder (named holes appear in the skeletons above)
 - parameterized atoms: `var:<name>` → `<name>`, `num:<n>` → `<n>`,
   `str:<s>` → `"<s>"`
@@ -166,7 +170,7 @@ The command is exposed as the `lisp-editor` bin.
   instruction, and expected result.
 - arms: `direct` (agent outputs whole-file text), `editor` (agent drives
   `lisp-editor`), `sedawk` (agent uses shell/`sed`/`awk`).
-- runner: for each `(task × arm × seed)`, runs the agent with the arm's
+- runner: for each `(task × arm)`, runs the agent with the arm's
   prompt/tools, captures the transcript and final artifact, and scores it.
 - results: per-run JSON plus a summary table.
 
@@ -205,8 +209,6 @@ integration tests establish the pattern future work should follow.
 - Free-text `--text` payloads.
 - Macros, `require`, quote/quasiquote, and macro expansion.
 - An MCP adapter (possible later; the CLI is the contract).
-- Multi-argument non-variadic `apply` arity rules; v1 keeps `(_func _args)` as a
-  single placeholder skeleton.
 - GitHub/remote issue publishing (local-markdown tracker is used for now).
 
 ## Further Notes
@@ -227,7 +229,11 @@ integration tests establish the pattern future work should follow.
   program — are the metrics that carry real signal. This should be stated
   honestly when reporting results rather than claiming a victory on bracket
   mismatches alone.
+- **Known gap in the task set.** The current fixed tasks are all small enough
+  that text/`sed` editing never produced a bracket mismatch, so the reliability
+  claim is not yet testable; and each task mixes reference-resolution difficulty
+  with construction difficulty, which confounds the effort comparison. See
+  issue 10.
 - **Open follow-ups.** If shape/atom expressiveness proves too weak for the task
-  set, a parameterized `apply` (arity) or a constrained free-text mode may need
-  revisiting; that decision is deliberately deferred until the first experiment
-  data exists.
+  set, a constrained free-text mode may need revisiting; that decision is
+  deliberately deferred until the first experiment data exists.

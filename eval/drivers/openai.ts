@@ -96,7 +96,6 @@ export class OpenAICompatibleDriver implements AgentDriver {
         model: arm.model ?? this.options.model,
         messages,
         temperature: arm.temperature ?? this.options.temperature ?? 0,
-        seed: request.seed,
       };
       if (toolDefs.length > 0) body.tools = toolDefs;
 

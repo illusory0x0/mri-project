@@ -1,6 +1,5 @@
 {
   "id": "t04-lambda-map",
-  "nesting": 5,
   "instruction": "Make the lambda increment its argument by 1.",
   "input": "(define (inc-all xs) (map (lambda (x) x) xs))",
   "expected": "(define (inc-all xs) (map (lambda (x) (+ x 1)) xs))"

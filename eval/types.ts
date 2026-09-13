@@ -1,6 +1,5 @@
 export interface Task {
   id: string;
-  nesting: number;
   instruction: string;
   input: string;
   expected: string;
@@ -44,7 +43,6 @@ export interface DriverRequest {
   task: Task;
   tools: ToolSpec[];
   ctx: ToolContext;
-  seed: number;
   signal?: AbortSignal;
 }
 
@@ -54,9 +52,7 @@ export interface AgentDriver {
 
 export interface RunResult {
   taskId: string;
-  nesting: number;
   arm: ArmName;
-  seed: number;
   model?: string;
   temperature?: number;
   parsed: boolean;

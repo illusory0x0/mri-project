@@ -18,7 +18,6 @@ const sedawkArm: Arm = { name: "sedawk", systemPrompt: "test", tools: ["shell"] 
 
 const task: Task = {
   id: "t-increment",
-  nesting: 4,
   instruction: "increment",
   input: "(define (f x) x)",
   expected: "(define (f x) (+ x 1))",
@@ -46,26 +45,26 @@ test("scorer: parseable but different program is not a success", async () => {
 });
 
 test("runOne: direct arm scores its typed artifact", async () => {
-  const result = await runOne(new MockDriver(), directArm, task, 0);
+  const result = await runOne(new MockDriver(), directArm, task);
   assert.equal(result.success, true);
 });
 
 test("runOne: direct arm's broken artifact is a paren mismatch", async () => {
   const broken: Task = { ...task, id: "t-broken" };
-  const result = await runOne(new MockDriver(), directArm, broken, 0);
+  const result = await runOne(new MockDriver(), directArm, broken);
   assert.equal(result.parsed, false);
   assert.equal(result.parenMismatch, true);
   assert.equal(result.success, false);
 });
 
 test("runOne: sedawk arm scores the edited file", async () => {
-  const result = await runOne(new MockDriver(), sedawkArm, task, 0);
+  const result = await runOne(new MockDriver(), sedawkArm, task);
   assert.equal(result.success, true);
   assert.ok(result.steps >= 1);
 });
 
 test("runOne: tool arms cannot bypass the tool with typed output", async () => {
-  const result = await runOne(new MockDriver(), editorArm, task, 0);
+  const result = await runOne(new MockDriver(), editorArm, task);
   assert.equal(result.finalArtifact.trim(), "_");
   assert.notEqual(result.finalArtifact.trim(), task.expected);
 });
@@ -112,7 +111,6 @@ test("openai driver: retries an empty response and eventually succeeds", async (
       ctx: { async exec() {
         return "{}";
       } },
-      seed: 0,
     });
     assert.equal(calls, 3);
     assert.equal(result.finalArtifact, "(done)");
@@ -156,7 +154,6 @@ test("openai driver: retries a network failure and eventually succeeds", async (
       ctx: { async exec() {
         return "{}";
       } },
-      seed: 0,
     });
     assert.equal(calls, 2);
     assert.equal(result.finalArtifact, "(done)");
@@ -197,7 +194,6 @@ test("openai driver: retries a 429 response and eventually succeeds", async () =
       ctx: { async exec() {
         return "{}";
       } },
-      seed: 0,
     });
     assert.equal(calls, 2);
     assert.equal(result.finalArtifact, "(done)");
@@ -236,7 +232,6 @@ test("openai driver: does not retry a permanent 400 response", async () => {
         ctx: { async exec() {
           return "{}";
         } },
-        seed: 0,
       }),
       /LLM request failed: 400/
     );
@@ -295,7 +290,6 @@ test("openai driver: exhausting maxSteps returns a result instead of throwing", 
           return "{}";
         },
       },
-      seed: 0,
     });
     assert.equal(result.steps, 3);
     assert.equal(toolExecs, 3);
@@ -370,7 +364,7 @@ test(
       },
     };
     const started = Date.now();
-    const result = await runOne(slowDriver, directArm, task, 0, {
+    const result = await runOne(slowDriver, directArm, task, {
       timeoutMs: 50,
     });
     assert.equal(result.success, false);
@@ -388,9 +382,7 @@ test("summarize: aggregates rates per arm", () => {
     paren: boolean
   ): RunResult => ({
     taskId: "t",
-    nesting: 4,
     arm,
-    seed: 0,
     parsed,
     parenMismatch: paren,
     evaluates: parsed,

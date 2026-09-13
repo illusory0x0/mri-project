@@ -4,8 +4,6 @@ import { ArmName } from "./types.js";
 export interface Options {
   driver: "mock" | "openai";
   arms?: ArmName[];
-  seed: number;
-  seeds: number;
   out: string;
   model: string;
   baseUrl: string;
@@ -19,8 +17,6 @@ export const USAGE = `Usage: node dist/eval/run.js [options]
 Options:
   --driver <mock|openai>  Agent driver (default: mock)
   --arm <name>            Run only this arm (repeatable)
-  --seed <n>              Starting seed (default: 0)
-  --seeds <n>             Number of seeds (default: 1)
   --out <dir>             Output directory (default: eval/results)
   --model <name>          Model name (required for openai)
   --base-url <url>        API base URL (required for openai)
@@ -33,8 +29,6 @@ Options:
 export function parseArgs(argv: string[]): Options {
   const options: Options = {
     driver: "mock",
-    seed: 0,
-    seeds: 1,
     out: path.resolve(process.cwd(), "eval/results"),
     model: "",
     baseUrl: "",
@@ -56,12 +50,6 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--arm":
         arms.push(value() as ArmName);
-        break;
-      case "--seed":
-        options.seed = Number(value());
-        break;
-      case "--seeds":
-        options.seeds = Number(value());
         break;
       case "--out":
         options.out = path.resolve(value());

@@ -41,9 +41,6 @@ async function main(): Promise<void> {
   const temperatures = [
     ...new Set(results.map((result) => String(result.temperature ?? "default"))),
   ];
-  const seeds = [...new Set(results.map((result) => result.seed))].sort(
-    (a, b) => a - b
-  );
 
   process.stdout.write(
     "Note: the editor arm is expected to have near-zero bracket mismatches by\n" +
@@ -52,7 +49,7 @@ async function main(): Promise<void> {
   process.stdout.write(
     `conditions: model=${models.join(", ")} temperature=${temperatures.join(
       ", "
-    )} seeds=[${seeds.join(", ")}] tasks=${taskIds.length} runs=${results.length}\n`
+    )} tasks=${taskIds.length} runs=${results.length}\n`
   );
   if (models.includes("mock")) {
     process.stdout.write(

@@ -8,7 +8,6 @@ interface ViewerData {
   generatedAt: string;
   models: string[];
   temperatures: string[];
-  seeds: number[];
   armNames: string[];
   armDefs: Arm[];
   toolSpecs: Record<string, ToolSpec>;
@@ -77,7 +76,6 @@ function renderStats() {
   bits.push(DATA.armNames.length + " 种编辑方式");
   if (DATA.models.length) bits.push("模型 " + DATA.models.join(", "));
   if (DATA.temperatures.length) bits.push("temperature " + DATA.temperatures.join(", "));
-  if (DATA.seeds.length) bits.push("seeds [" + DATA.seeds.join(", ") + "]");
   document.getElementById("stats").textContent = bits.join("  ·  ");
 }
 
@@ -118,7 +116,7 @@ function renderMatrix() {
       if (!cellRuns.length) { html += '<td class="na">—</td>'; return; }
       var r = cellRuns[0];
       html += '<td><button class="cell ' + (r.success ? "ok" : "bad") + '"'
-        + ' data-task="' + esc(task.id) + '" data-arm="' + esc(a) + '" data-seed="' + r.seed + '">'
+        + ' data-task="' + esc(task.id) + '" data-arm="' + esc(a) + '">'
         + '<span class="mark">' + (r.success ? "✓" : "✗") + "</span>"
         + '<span class="mini">' + r.steps + " 步 · " + r.tokens.toLocaleString() + " tok</span>"
         + "</button></td>";
@@ -258,7 +256,6 @@ function renderRequestContext(run) {
     ["arm", arm.name],
     ["model", run.model || "(default)"],
     ["temperature", String(run.temperature == null ? "(default)" : run.temperature)],
-    ["seed", String(run.seed)],
     ["tools", (arm.tools && arm.tools.length ? arm.tools.join(", ") : "(无工具)")],
     ["message 数", String((run.transcript || []).length)],
     ["steps", fmt(run.steps)],
@@ -359,10 +356,10 @@ function tabs(names) {
 var overlay, modalBody;
 function closeModal() { overlay.classList.add("hidden"); modalBody.innerHTML = ""; }
 
-function openDetail(taskId, arm, seed) {
+function openDetail(taskId, arm) {
   var task = DATA.tasks.filter(function (t) { return t.id === taskId; })[0] || { id: taskId };
   var runs = DATA.runs.filter(function (r) { return r.taskId === taskId && r.arm === arm; });
-  var run = runs.filter(function (r) { return r.seed === seed; })[0] || runs[0];
+  var run = runs[0];
   if (!run) return;
 
   modalBody.innerHTML = "";
@@ -376,21 +373,6 @@ function openDetail(taskId, arm, seed) {
   head.appendChild(el("span", "badge " + (run.success ? "ok" : "bad"), run.success ? "成功" : "失败"));
   modalBody.appendChild(head);
 
-  if (runs.length > 1) {
-    var picker = el("div", "picker");
-    picker.appendChild(el("label", null, "seed / run："));
-    var sel = el("select");
-    runs.forEach(function (r) {
-      var opt = el("option", null, "seed " + r.seed);
-      opt.value = String(r.seed);
-      if (r.seed === run.seed) opt.selected = true;
-      sel.appendChild(opt);
-    });
-    sel.addEventListener("change", function () { openDetail(taskId, arm, Number(sel.value)); });
-    picker.appendChild(sel);
-    modalBody.appendChild(picker);
-  }
-
   var chips = el("div", "chips");
   [
     ["步数", fmt(run.steps)],
@@ -398,7 +380,6 @@ function openDetail(taskId, arm, seed) {
     ["解析", run.parsed ? "通过" : "失败"],
     ["括号", run.parenMismatch ? "不匹配" : "匹配"],
     ["求值", run.evaluates ? "通过" : "失败"],
-    ["seed", String(run.seed)],
   ].forEach(function (p) {
     var c = el("span", "chip");
     c.innerHTML = "<b>" + esc(p[0]) + "</b> " + esc(p[1]);
@@ -438,7 +419,7 @@ function main() {
   document.getElementById("matrix").addEventListener("click", function (e) {
     var btn = e.target.closest ? e.target.closest(".cell") : null;
     if (!btn) return;
-    openDetail(btn.getAttribute("data-task"), btn.getAttribute("data-arm"), Number(btn.getAttribute("data-seed")));
+    openDetail(btn.getAttribute("data-task"), btn.getAttribute("data-arm"));
   });
   document.getElementById("close").addEventListener("click", closeModal);
   overlay.addEventListener("click", function (e) { if (e.target === overlay) closeModal(); });
@@ -628,14 +609,13 @@ async function main(): Promise<void> {
   const taskIds = [...new Set(runs.map((run) => run.taskId))].sort();
   const tasks = taskIds.map(
     (id): Task =>
-      tasksById.get(id) ?? { id, nesting: 0, instruction: "", input: "", expected: "" }
+      tasksById.get(id) ?? { id, instruction: "", input: "", expected: "" }
   );
 
   const data: ViewerData = {
     generatedAt: new Date().toISOString(),
     models: [...new Set(runs.map((run) => run.model ?? "mock"))],
     temperatures: [...new Set(runs.map((run) => String(run.temperature ?? "default")))],
-    seeds: [...new Set(runs.map((run) => run.seed))].sort((a, b) => a - b),
     armNames: orderedArms(runs),
     armDefs,
     toolSpecs: TOOL_SPECS,

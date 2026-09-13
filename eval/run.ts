@@ -40,23 +40,20 @@ async function main(): Promise<void> {
 
   for (const arm of arms) {
     for (const task of tasks) {
-      for (let i = 0; i < options.seeds; i++) {
-        const seed = options.seed + i;
-        const result = await runOne(driver, arm, task, seed, {
-          model: options.model || undefined,
-          temperature: options.temperature,
-          timeoutMs: options.timeoutMs,
-        });
-        results.push(result);
-        const name = `${arm.name}-${task.id}-${seed}.json`;
-        await writeFile(
-          path.join(options.out, name),
-          JSON.stringify(result, null, 2)
-        );
-        process.stdout.write(
-          `${arm.name} ${task.id} seed=${seed} success=${result.success} parsed=${result.parsed}\n`
-        );
-      }
+      const result = await runOne(driver, arm, task, {
+        model: options.model || undefined,
+        temperature: options.temperature,
+        timeoutMs: options.timeoutMs,
+      });
+      results.push(result);
+      const name = `${arm.name}-${task.id}.json`;
+      await writeFile(
+        path.join(options.out, name),
+        JSON.stringify(result, null, 2)
+      );
+      process.stdout.write(
+        `${arm.name} ${task.id} success=${result.success} parsed=${result.parsed}\n`
+      );
     }
   }
 

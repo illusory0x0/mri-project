@@ -91,7 +91,6 @@ export async function runOne(
   driver: AgentDriver,
   arm: Arm,
   task: Task,
-  seed: number,
   meta: RunMeta = {}
 ): Promise<RunResult> {
   const workspace: Workspace = { source: task.input };
@@ -112,7 +111,6 @@ export async function runOne(
       task,
       tools,
       ctx,
-      seed,
       signal: controller.signal,
     });
     runPromise.catch(() => {});
@@ -136,9 +134,7 @@ export async function runOne(
   if (result === undefined) {
     return {
       taskId: task.id,
-      nesting: task.nesting,
       arm: arm.name,
-      seed,
       model: meta.model,
       temperature: meta.temperature,
       parsed: false,
@@ -161,9 +157,7 @@ export async function runOne(
 
   return {
     taskId: task.id,
-    nesting: task.nesting,
     arm: arm.name,
-    seed,
     model: meta.model,
     temperature: meta.temperature,
     parsed: score.parsed,

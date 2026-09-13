@@ -1,6 +1,5 @@
 {
   "id": "t07-cond",
-  "nesting": 5,
   "instruction": "Change the failing grade from \"F\" to \"C\".",
   "input": "(define (grade n) (cond ((>= n 90) \"A\") ((>= n 80) \"B\") (else \"F\")))",
   "expected": "(define (grade n) (cond ((>= n 90) \"A\") ((>= n 80) \"B\") (else \"C\")))"

@@ -1,6 +1,5 @@
 {
   "id": "t02-let-square",
-  "nesting": 4,
   "instruction": "Replace only the subexpression (* x x) in place with (let ((y (* x x))) y). Do not move it elsewhere or rewrap the surrounding (+ 0 (+ 0 ...)) form.",
   "input": "(define (square x) (+ 0 (+ 0 (* x x))))",
   "expected": "(define (square x) (+ 0 (+ 0 (let ((y (* x x))) y))))"
