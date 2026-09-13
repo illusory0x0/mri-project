@@ -117,25 +117,39 @@ export function replaceAt(root: Node, path: number[], next: Node): Node {
   return { type: "list", items };
 }
 
-export interface OutlineEntry {
+export type OutlineKind = "list" | "symbol" | "number" | "string" | "hole";
+
+export interface OutlineListEntry {
   path: number[];
-  tag: string;
-  hole: boolean;
+  kind: "list";
+  head: string | null;
 }
 
-function tagOf(node: Node): string {
-  if (node.type === "atom") return node.tag;
-  const head = node.items[0];
-  if (head !== undefined && head.type === "atom" && head.tag === "symbol") {
-    return head.value;
+export interface OutlineAtomEntry {
+  path: number[];
+  kind: "symbol" | "number" | "string" | "hole";
+  value: string;
+}
+
+export type OutlineEntry = OutlineListEntry | OutlineAtomEntry;
+
+function entryFor(node: Node, path: number[]): OutlineEntry {
+  if (node.type === "atom") {
+    if (isHole(node)) return { path, kind: "hole", value: node.value };
+    return { path, kind: node.tag, value: node.value };
   }
-  return "list";
+  const head = node.items[0];
+  const headName =
+    head !== undefined && head.type === "atom" && head.tag === "symbol"
+      ? head.value
+      : null;
+  return { path, kind: "list", head: headName };
 }
 
 export function outline(root: Node): OutlineEntry[] {
   const entries: OutlineEntry[] = [];
   const walk = (node: Node, path: number[]): void => {
-    entries.push({ path, tag: tagOf(node), hole: isHole(node) });
+    entries.push(entryFor(node, path));
     if (node.type === "list") {
       node.items.forEach((child, index) => walk(child, path.concat(index)));
     }

@@ -137,10 +137,14 @@ function renderMatrix() {
 function renderOutline(nodes) {
   var wrap = el("div", "outline");
   nodes.slice(0, 40).forEach(function (n) {
-    var row = el("div", "orow" + (n.hole ? " hole" : ""));
+    var row = el("div", "orow" + (n.kind === "hole" ? " hole" : ""));
     row.appendChild(el("span", "opath", JSON.stringify(n.path)));
-    row.appendChild(el("span", "otag", n.tag));
-    if (n.hole) row.appendChild(el("span", "ohole", "hole"));
+    if (n.kind === "list") {
+      row.appendChild(el("span", "okind", "list"));
+      row.appendChild(el("span", "otag", n.head == null ? "(head)" : "head:" + n.head));
+    } else {
+      row.appendChild(el("span", "otag", n.kind + ":" + n.value));
+    }
     wrap.appendChild(row);
   });
   if (nodes.length > 40) wrap.appendChild(el("div", "muted", "… 共 " + nodes.length + " 个节点"));
@@ -553,7 +557,7 @@ details.reason summary, details.raw summary { cursor: pointer; color: var(--mute
 .orow.hole { border-color: var(--amber); }
 .opath { color: var(--accent); }
 .otag { color: var(--fg); }
-.ohole { color: var(--amber); font-size: 11px; }
+.okind { color: var(--muted); font-size: 11px; }
 .muted { color: var(--muted); }
 table.keyval th { width: 130px; color: var(--muted); font-weight: 500; }
 .toolspec { border-top: 1px solid var(--border); padding-top: 12px; margin-top: 12px; }

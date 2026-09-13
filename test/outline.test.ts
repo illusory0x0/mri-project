@@ -1,27 +1,32 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { find, outline, run } from "./helpers.js";
+import { AtomEntry, find, ListEntry, outline, run } from "./helpers.js";
 
-test("outline: parses a simple program and exposes paths and tags", () => {
+test("outline: parses a simple program and exposes paths, kinds and heads", () => {
   const entries = outline("(define (f x) x)");
-  assert.deepEqual(find(entries, [])?.tag, "list");
-  assert.deepEqual(find(entries, [0])?.tag, "define");
-  assert.equal(find(entries, [0, 0])?.tag, "symbol");
-  assert.equal(find(entries, [0, 1])?.tag, "f");
-  assert.equal(find(entries, [0, 1, 0])?.tag, "symbol");
-  assert.equal(find(entries, [0, 2])?.tag, "symbol");
+  assert.equal(find(entries, [])?.kind, "list");
+  assert.equal((find(entries, []) as ListEntry).head, null);
+  assert.equal(find(entries, [0])?.kind, "list");
+  assert.equal((find(entries, [0]) as ListEntry).head, "define");
+  assert.equal(find(entries, [0, 0])?.kind, "symbol");
+  assert.equal((find(entries, [0, 0]) as AtomEntry).value, "define");
+  assert.equal((find(entries, [0, 1]) as ListEntry).head, "f");
+  assert.equal((find(entries, [0, 1, 0]) as AtomEntry).value, "f");
+  assert.equal((find(entries, [0, 2]) as AtomEntry).value, "x");
 });
 
-test("outline: marks underscore identifiers as holes", () => {
+test("outline: lifts underscore identifiers to kind hole", () => {
   const entries = outline("(lambda (_param) _body)");
-  assert.equal(find(entries, [0, 1, 0])?.hole, true);
-  assert.equal(find(entries, [0, 2])?.hole, true);
-  assert.equal(find(entries, [0, 0])?.hole, false);
+  assert.equal(find(entries, [0, 1, 0])?.kind, "hole");
+  assert.equal(find(entries, [0, 2])?.kind, "hole");
+  assert.equal((find(entries, [0, 1, 0]) as AtomEntry).value, "_param");
+  assert.equal((find(entries, [0, 2]) as AtomEntry).value, "_body");
+  assert.equal(find(entries, [0, 0])?.kind, "symbol");
 });
 
 test("outline: accepts comments and discards them", () => {
   const entries = outline("; a comment\n(foo)\n");
-  assert.equal(find(entries, [0])?.tag, "foo");
+  assert.equal((find(entries, [0]) as ListEntry).head, "foo");
   assert.equal(entries.length, 3);
 });
 
