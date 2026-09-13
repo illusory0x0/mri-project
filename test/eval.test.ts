@@ -1,10 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { MockDriver } from "../eval/drivers/mock.js";
+import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
 import { runOne, summarize } from "../eval/runner.js";
 import { scoreArtifact } from "../eval/scorer.js";
-import { Arm, RunResult, Task } from "../eval/types.js";
+import { AgentDriver, Arm, RunResult, Task } from "../eval/types.js";
 
 const directArm: Arm = { name: "direct", systemPrompt: "test", tools: [] };
 const editorArm: Arm = {
@@ -302,6 +303,42 @@ test("openai driver: exhausting maxSteps returns a result instead of throwing", 
     globalThis.fetch = originalFetch;
   }
 });
+
+test("runProcess: aborting kills the running child", async () => {
+  const controller = new AbortController();
+  const started = Date.now();
+  const promise = runProcess("sleep", ["30"], { signal: controller.signal });
+  setTimeout(() => controller.abort(), 50);
+  const result = await promise;
+  assert.ok(Date.now() - started < 5000);
+  assert.notEqual(result.code, 0);
+});
+
+test(
+  "runOne: a run exceeding the timeout is aborted and marked failed",
+  { timeout: 5000 },
+  async () => {
+    let aborted = false;
+    const slowDriver: AgentDriver = {
+      async run(request) {
+        return new Promise<never>((_resolve, reject) => {
+          request.signal?.addEventListener("abort", () => {
+            aborted = true;
+            reject(new Error("aborted"));
+          });
+        });
+      },
+    };
+    const started = Date.now();
+    const result = await runOne(slowDriver, directArm, task, 0, {
+      timeoutMs: 50,
+    });
+    assert.equal(result.success, false);
+    assert.match(result.parseError ?? "", /timed out/);
+    assert.equal(aborted, true);
+    assert.ok(Date.now() - started < 2000);
+  }
+);
 
 test("summarize: aggregates rates per arm", () => {
   const make = (

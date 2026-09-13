@@ -15,6 +15,7 @@ interface Options {
   baseUrl: string;
   apiKey: string;
   temperature: number;
+  timeoutMs: number;
 }
 
 function parseArgs(argv: string[]): Options {
@@ -27,6 +28,7 @@ function parseArgs(argv: string[]): Options {
     baseUrl: process.env.LISP_EDITOR_BASE_URL ?? "",
     apiKey: process.env.LISP_EDITOR_API_KEY ?? "",
     temperature: Number(process.env.LISP_EDITOR_TEMPERATURE ?? "0"),
+    timeoutMs: Number(process.env.LISP_EDITOR_RUN_TIMEOUT_MS ?? "180000"),
   };
   const arms: ArmName[] = [];
   for (let i = 0; i < argv.length; i++) {
@@ -63,6 +65,9 @@ function parseArgs(argv: string[]): Options {
         break;
       case "--temperature":
         options.temperature = Number(value());
+        break;
+      case "--timeout":
+        options.timeoutMs = Number(value());
         break;
       default:
         throw new Error(`unknown option: ${arg}`);
@@ -106,6 +111,7 @@ async function main(): Promise<void> {
         const result = await runOne(driver, arm, task, seed, {
           model: options.model || undefined,
           temperature: options.temperature,
+          timeoutMs: options.timeoutMs,
         });
         results.push(result);
         const name = `${arm.name}-${task.id}-${seed}.json`;

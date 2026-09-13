@@ -45,6 +45,7 @@ export interface DriverRequest {
   tools: ToolSpec[];
   ctx: ToolContext;
   seed: number;
+  signal?: AbortSignal;
 }
 
 export interface AgentDriver {

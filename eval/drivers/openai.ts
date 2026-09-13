@@ -30,8 +30,33 @@ export function extractCodeBlock(text: string): string {
   return (match ? match[1] : text).trim();
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+function abortError(): Error {
+  const error = new Error("The operation was aborted");
+  error.name = "AbortError";
+  return error;
+}
+
+function sleep(ms: number, signal?: AbortSignal): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(abortError());
+      return;
+    }
+    let timer: NodeJS.Timeout;
+    const onAbort = (): void => {
+      clearTimeout(timer);
+      reject(abortError());
+    };
+    timer = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, ms);
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+function isAbort(error: unknown, signal?: AbortSignal): boolean {
+  return signal?.aborted === true || (error instanceof Error && error.name === "AbortError");
 }
 
 function isRetryableStatus(status: number): boolean {
@@ -42,7 +67,7 @@ export class OpenAICompatibleDriver implements AgentDriver {
   constructor(private readonly options: OpenAICompatibleOptions) {}
 
   async run(request: DriverRequest): Promise<DriverResult> {
-    const { arm, task, tools, ctx } = request;
+    const { arm, task, tools, ctx, signal } = request;
     const maxSteps = this.options.maxSteps ?? 25;
     const maxRetries = this.options.maxRetries ?? 3;
     const retryDelayMs = this.options.retryDelayMs ?? 1000;
@@ -78,7 +103,7 @@ export class OpenAICompatibleDriver implements AgentDriver {
       let message: ChatMessage | undefined;
       let lastError = "LLM response had no message";
       for (let attempt = 0; attempt <= maxRetries; attempt++) {
-        if (attempt > 0) await sleep(retryDelayMs * attempt);
+        if (attempt > 0) await sleep(retryDelayMs * attempt, signal);
 
         let response: Response;
         try {
@@ -91,9 +116,11 @@ export class OpenAICompatibleDriver implements AgentDriver {
                 authorization: `Bearer ${this.options.apiKey}`,
               },
               body: JSON.stringify(body),
+              signal,
             }
           );
         } catch (error) {
+          if (isAbort(error, signal)) throw error;
           lastError = error instanceof Error ? error.message : String(error);
           continue;
         }

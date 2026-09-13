@@ -9,6 +9,7 @@ import {
   Arm,
   ARM_NAMES,
   ArmSummary,
+  DriverResult,
   RunResult,
   Task,
   ToolContext,
@@ -17,13 +18,21 @@ import {
 } from "./types.js";
 
 const CLI = path.resolve(process.cwd(), "dist/src/cli.js");
+const DEFAULT_TIMEOUT_MS = 180_000;
 
-async function execShell(command: string, workspace: Workspace): Promise<string> {
+async function execShell(
+  command: string,
+  workspace: Workspace,
+  signal?: AbortSignal
+): Promise<string> {
   const dir = await mkdtemp(path.join(os.tmpdir(), "lisp-editor-eval-"));
   try {
     const file = path.join(dir, "program.rkt");
     await writeFile(file, workspace.source, "utf8");
-    const result = await runProcess("bash", ["-c", command], { cwd: dir });
+    const result = await runProcess("bash", ["-c", command], {
+      cwd: dir,
+      signal,
+    });
     workspace.source = await readFile(file, "utf8");
     return JSON.stringify({
       code: result.code,
@@ -35,7 +44,10 @@ async function execShell(command: string, workspace: Workspace): Promise<string>
   }
 }
 
-export function buildToolContext(workspace: Workspace): ToolContext {
+export function buildToolContext(
+  workspace: Workspace,
+  signal?: AbortSignal
+): ToolContext {
   return {
     async exec(name, input) {
       if (name === "lisp_editor") {
@@ -43,9 +55,11 @@ export function buildToolContext(workspace: Workspace): ToolContext {
         if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) {
           return JSON.stringify({ ok: false, error: "args must be strings" });
         }
-        const result = await runProcess(process.execPath, [CLI, ...(args as string[])], {
-          input: workspace.source,
-        });
+        const result = await runProcess(
+          process.execPath,
+          [CLI, ...(args as string[])],
+          { input: workspace.source, signal }
+        );
         if (result.code !== 0) {
           return JSON.stringify({ ok: false, error: result.stderr.trim() });
         }
@@ -60,7 +74,7 @@ export function buildToolContext(workspace: Workspace): ToolContext {
         if (typeof command !== "string") {
           return JSON.stringify({ ok: false, error: "command must be a string" });
         }
-        return execShell(command, workspace);
+        return execShell(command, workspace, signal);
       }
       return JSON.stringify({ ok: false, error: `unknown tool: ${name}` });
     },
@@ -70,6 +84,7 @@ export function buildToolContext(workspace: Workspace): ToolContext {
 export interface RunMeta {
   model?: string;
   temperature?: number;
+  timeoutMs?: number;
 }
 
 export async function runOne(
@@ -80,14 +95,64 @@ export async function runOne(
   meta: RunMeta = {}
 ): Promise<RunResult> {
   const workspace: Workspace = { source: task.input };
-  const ctx = buildToolContext(workspace);
+  const timeoutMs = meta.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const controller = new AbortController();
+  const ctx = buildToolContext(workspace, controller.signal);
   const tools: ToolSpec[] = arm.tools.map((name) => {
     const spec = TOOL_SPECS[name];
     if (!spec) throw new Error(`unknown tool spec: ${name}`);
     return spec;
   });
 
-  const result = await driver.run({ arm, task, tools, ctx, seed });
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  let result: DriverResult | undefined;
+  try {
+    const runPromise = driver.run({
+      arm,
+      task,
+      tools,
+      ctx,
+      seed,
+      signal: controller.signal,
+    });
+    runPromise.catch(() => {});
+    const abortPromise = new Promise<undefined>((resolve) => {
+      if (controller.signal.aborted) resolve(undefined);
+      else
+        controller.signal.addEventListener("abort", () => resolve(undefined), {
+          once: true,
+        });
+    });
+    try {
+      result = await Promise.race([runPromise, abortPromise]);
+    } catch (error) {
+      if (!controller.signal.aborted) throw error;
+      result = undefined;
+    }
+  } finally {
+    clearTimeout(timer);
+  }
+
+  if (result === undefined) {
+    return {
+      taskId: task.id,
+      nesting: task.nesting,
+      arm: arm.name,
+      seed,
+      model: meta.model,
+      temperature: meta.temperature,
+      parsed: false,
+      parenMismatch: false,
+      evaluates: false,
+      success: false,
+      parseError: `run timed out after ${timeoutMs}ms`,
+      steps: 0,
+      tokens: 0,
+      finalArtifact: workspace.source,
+      transcript: [],
+    };
+  }
+
   const finalArtifact =
     arm.tools.length === 0
       ? result.finalArtifact ?? workspace.source
