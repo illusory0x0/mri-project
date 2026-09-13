@@ -44,7 +44,9 @@ async function main(): Promise<void> {
 
   process.stdout.write(
     "Note: the editor arm is expected to have near-zero bracket mismatches by\n" +
-      "construction, so success@1, steps, and tokens carry the real signal.\n\n"
+      "construction, so success@1, steps, and tokens carry the real signal.\n" +
+      "Note: tasks t01-t12 are single-line programs; bracket-safety is only\n" +
+      "meaningfully stressed by the multi-line tasks (t13+).\n\n"
   );
   process.stdout.write(
     `conditions: model=${models.join(", ")} temperature=${temperatures.join(

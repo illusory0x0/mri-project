@@ -28,7 +28,10 @@ async function execShell(
   const dir = await mkdtemp(path.join(os.tmpdir(), "lisp-editor-eval-"));
   try {
     const file = path.join(dir, "program.rkt");
-    await writeFile(file, workspace.source, "utf8");
+    const content = workspace.source.endsWith("\n")
+      ? workspace.source
+      : workspace.source + "\n";
+    await writeFile(file, content, "utf8");
     const result = await runProcess("bash", ["-c", command], {
       cwd: dir,
       signal,

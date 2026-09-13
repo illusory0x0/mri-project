@@ -1,0 +1,8 @@
+{
+  "id": "t13-wrap-let",
+  "locate": "described",
+  "construct": "build",
+  "instruction": "Wrap the entire body of compute in a let that binds total to the body expression, then returns total.",
+  "input": "(define (compute x y)\n  (+ (* x x)\n     (* y y)\n     (* x y)))",
+  "expected": "(define (compute x y) (let ((total (+ (* x x) (* y y) (* x y)))) total))"
+}

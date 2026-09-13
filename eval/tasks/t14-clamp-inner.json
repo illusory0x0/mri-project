@@ -1,0 +1,8 @@
+{
+  "id": "t14-clamp-inner",
+  "locate": "described",
+  "construct": "wrap",
+  "instruction": "In compute, wrap the innermost (+ a b) with (max 0 ...) so negative results become 0.",
+  "input": "(define (compute a b c)\n  (* c\n     (+ (* a b)\n        (+ a b))))",
+  "expected": "(define (compute a b c) (* c (+ (* a b) (max 0 (+ a b)))))"
+}
