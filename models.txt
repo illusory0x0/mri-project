@@ -1,0 +1,12 @@
+linda/deepseek-v4-pro-0813
+linda/deepseek-v4.1-flash
+linda/glm-5.2
+linda/glm-5.3
+linda/kimi-k2.7-code
+linda/kimi-k2.7-code-highspeed
+linda/kimi-k3
+linda/qwen3.5-35b-a3b
+linda/qwen3.5-397b-a17b
+linda/qwen3.8-2.4t-a95b
+linda/qwen3.8-27b
+linda/qwen3.8-max-0902
