@@ -638,7 +638,7 @@ async function main(): Promise<void> {
   };
 
   const payload = JSON.stringify(data).replace(/</g, "\\u003c");
-  const html = shell().replace("/*__DATA__*/", payload);
+  const html = shell().replace("/*__DATA__*/", () => payload);
   await writeFile(outFile, html, "utf8");
   process.stdout.write(`wrote ${outFile} (${runs.length} runs, ${data.tasks.length} tasks)\n`);
 }
