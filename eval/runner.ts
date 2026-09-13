@@ -242,6 +242,17 @@ export function loadArms(
   return loadJsonDir<Arm>(dir);
 }
 
+export function selectTasks(tasks: Task[], ids?: string[]): Task[] {
+  if (!ids || ids.length === 0) return tasks;
+  const wanted = new Set(ids);
+  const known = new Set(tasks.map((task) => task.id));
+  const unknown = [...wanted].filter((id) => !known.has(id));
+  if (unknown.length > 0) {
+    throw new Error(`unknown task id(s): ${unknown.join(", ")}`);
+  }
+  return tasks.filter((task) => wanted.has(task.id));
+}
+
 export function summarize(results: RunResult[]): ArmSummary[] {
   return ARM_NAMES.map((arm): ArmSummary => {
     const subset = results.filter((result) => result.arm === arm);

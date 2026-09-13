@@ -4,6 +4,7 @@ import { ArmName } from "./types.js";
 export interface Options {
   driver: "mock" | "openai";
   arms?: ArmName[];
+  tasks?: string[];
   out: string;
   model: string;
   baseUrl: string;
@@ -17,6 +18,7 @@ export const USAGE = `Usage: node dist/eval/run.js [options]
 Options:
   --driver <mock|openai>  Agent driver (default: mock)
   --arm <name>            Run only this arm (repeatable)
+  --task <id>             Run only this task by exact id (repeatable)
   --out <dir>             Output directory (default: eval/results)
   --model <name>          Model name (required for openai)
   --base-url <url>        API base URL (required for openai)
@@ -37,6 +39,7 @@ export function parseArgs(argv: string[]): Options {
     timeoutMs: 180_000,
   };
   const arms: ArmName[] = [];
+  const tasks: string[] = [];
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     const value = () => {
@@ -50,6 +53,9 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--arm":
         arms.push(value() as ArmName);
+        break;
+      case "--task":
+        tasks.push(value());
         break;
       case "--out":
         options.out = path.resolve(value());
@@ -79,5 +85,6 @@ export function parseArgs(argv: string[]): Options {
     }
   }
   if (arms.length > 0) options.arms = arms;
+  if (tasks.length > 0) options.tasks = tasks;
   return options;
 }

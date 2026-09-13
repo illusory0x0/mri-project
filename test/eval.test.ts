@@ -5,7 +5,7 @@ import { MockDriver } from "../eval/drivers/mock.js";
 import { parseArgs } from "../eval/options.js";
 import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
-import { runOne, summarize } from "../eval/runner.js";
+import { runOne, selectTasks, summarize } from "../eval/runner.js";
 import { scoreArtifact } from "../eval/scorer.js";
 import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
@@ -436,6 +436,27 @@ test("parseArgs: repeated --arm accumulates", () => {
     "direct",
     "ast-edit",
   ]);
+});
+
+test("parseArgs: repeated --task accumulates", () => {
+  assert.deepEqual(
+    parseArgs(["--task", "t01-increment", "--task", "t20-wide-build"]).tasks,
+    ["t01-increment", "t20-wide-build"]
+  );
+});
+
+test("selectTasks: no ids selects every task", () => {
+  assert.deepEqual(selectTasks([task], undefined), [task]);
+  assert.deepEqual(selectTasks([task], []), [task]);
+});
+
+test("selectTasks: selects exactly the named ids", () => {
+  const other: Task = { ...task, id: "t-other" };
+  assert.deepEqual(selectTasks([task, other], ["t-other"]), [other]);
+});
+
+test("selectTasks: an unknown id is an error, not a silent skip", () => {
+  assert.throws(() => selectTasks([task], ["t-missing"]), /unknown task id/);
 });
 
 test("parseArgs: unknown option fails", () => {

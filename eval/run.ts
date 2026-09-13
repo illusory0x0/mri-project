@@ -7,6 +7,7 @@ import {
   loadArms,
   loadTasks,
   runOne,
+  selectTasks,
   summarizeBracketDanger,
   summarizeHeadline,
 } from "./runner.js";
@@ -39,7 +40,7 @@ async function main(): Promise<void> {
   const arms = options.arms
     ? allArms.filter((arm) => options.arms!.includes(arm.name))
     : allArms;
-  const tasks = await loadTasks();
+  const tasks = selectTasks(await loadTasks(), options.tasks);
 
   await mkdir(options.out, { recursive: true });
   const results: RunResult[] = [];
