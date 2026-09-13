@@ -5,7 +5,7 @@ import { MockDriver } from "../eval/drivers/mock.js";
 import { parseArgs } from "../eval/options.js";
 import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
-import { runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
+import { mapLimit, runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
 import { scoreArtifact } from "../eval/scorer.js";
 import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
@@ -470,6 +470,39 @@ test("parseArgs: defaults are flag-only with a 3-minute timeout", () => {
 
 test("parseArgs: --timeout is parsed as seconds", () => {
   assert.equal(parseArgs(["--timeout", "30"]).timeoutMs, 30_000);
+});
+
+test("parseArgs: concurrency defaults to 4", () => {
+  assert.equal(parseArgs([]).concurrency, 4);
+});
+
+test("parseArgs: --concurrency is parsed as a positive integer", () => {
+  assert.equal(parseArgs(["--concurrency", "8"]).concurrency, 8);
+});
+
+test("parseArgs: rejects a non-positive or non-integer --concurrency", () => {
+  assert.throws(() => parseArgs(["--concurrency", "0"]), /positive integer/);
+  assert.throws(() => parseArgs(["--concurrency", "2.5"]), /positive integer/);
+  assert.throws(() => parseArgs(["--concurrency", "abc"]), /positive integer/);
+});
+
+test("mapLimit: caps in-flight work and preserves input order", async () => {
+  const items = [5, 1, 3, 2, 4];
+  let active = 0;
+  let peak = 0;
+  const results = await mapLimit(items, 2, async (ms) => {
+    active++;
+    peak = Math.max(peak, active);
+    await new Promise((resolve) => setTimeout(resolve, ms));
+    active--;
+    return ms * 2;
+  });
+  assert.equal(peak, 2);
+  assert.deepEqual(results, [10, 2, 6, 4, 8]);
+});
+
+test("mapLimit: an empty input resolves immediately", async () => {
+  assert.deepEqual(await mapLimit([], 4, async (x) => x), []);
 });
 
 test("parseArgs: rejects a non-positive or non-numeric --timeout", () => {

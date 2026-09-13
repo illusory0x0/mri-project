@@ -6,12 +6,13 @@ import { Options, parseArgs, USAGE } from "./options.js";
 import {
   loadArms,
   loadTasks,
+  mapLimit,
   runOne,
   selectTasks,
   summarizeBracketDanger,
   summarizeHeadline,
 } from "./runner.js";
-import { AgentDriver, RunResult } from "./types.js";
+import { AgentDriver } from "./types.js";
 
 function makeDriver(options: Options): AgentDriver {
   if (options.driver === "mock") return new MockDriver();
@@ -43,16 +44,17 @@ async function main(): Promise<void> {
   const tasks = selectTasks(await loadTasks(), options.tasks);
 
   await mkdir(options.out, { recursive: true });
-  const results: RunResult[] = [];
 
-  for (const arm of arms) {
-    for (const task of tasks) {
+  const jobs = arms.flatMap((arm) => tasks.map((task) => ({ arm, task })));
+  const results = await mapLimit(
+    jobs,
+    options.concurrency,
+    async ({ arm, task }) => {
       const result = await runOne(driver, arm, task, {
         model: options.model || undefined,
         temperature: options.temperature,
         timeoutMs: options.timeoutMs,
       });
-      results.push(result);
       const name = `${arm.name}-${task.id}.json`;
       await writeFile(
         path.join(options.out, name),
@@ -61,8 +63,9 @@ async function main(): Promise<void> {
       process.stdout.write(
         `${arm.name} ${task.id} success=${result.success} parsed=${result.parsed}\n`
       );
+      return result;
     }
-  }
+  );
 
   await writeFile(
     path.join(options.out, "summary.json"),

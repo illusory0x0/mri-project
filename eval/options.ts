@@ -11,6 +11,7 @@ export interface Options {
   apiKey: string;
   temperature: number;
   timeoutMs: number;
+  concurrency: number;
 }
 
 export const USAGE = `Usage: node dist/eval/run.js [options]
@@ -25,6 +26,7 @@ Options:
   --api-key <key>         API key (required for openai)
   --temperature <n>       Sampling temperature (default: 0)
   --timeout <seconds>     Per-run timeout in seconds (default: 180)
+  --concurrency <n>       Max runs in flight (default: 4)
   -h, --help              Show this help
 `;
 
@@ -37,6 +39,7 @@ export function parseArgs(argv: string[]): Options {
     apiKey: "",
     temperature: 0,
     timeoutMs: 180_000,
+    concurrency: 4,
   };
   const arms: ArmName[] = [];
   const tasks: string[] = [];
@@ -78,6 +81,16 @@ export function parseArgs(argv: string[]): Options {
           throw new Error(`invalid --timeout: expected positive seconds`);
         }
         options.timeoutMs = seconds * 1000;
+        break;
+      }
+      case "--concurrency": {
+        const width = Number(value());
+        if (!Number.isInteger(width) || width <= 0) {
+          throw new Error(
+            `invalid --concurrency: expected a positive integer`
+          );
+        }
+        options.concurrency = width;
         break;
       }
       default:

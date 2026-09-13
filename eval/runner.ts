@@ -94,6 +94,26 @@ export interface RunMeta {
   timeoutMs?: number;
 }
 
+export async function mapLimit<T, R>(
+  items: readonly T[],
+  limit: number,
+  fn: (item: T, index: number) => Promise<R>
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  if (items.length === 0) return results;
+  const width = Math.max(1, Math.min(Math.floor(limit), items.length));
+  let next = 0;
+  const worker = async (): Promise<void> => {
+    for (;;) {
+      const index = next++;
+      if (index >= items.length) return;
+      results[index] = await fn(items[index], index);
+    }
+  };
+  await Promise.all(Array.from({ length: width }, () => worker()));
+  return results;
+}
+
 export async function runOne(
   driver: AgentDriver,
   arm: Arm,
