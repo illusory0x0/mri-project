@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { MockDriver } from "../eval/drivers/mock.js";
+import { parseArgs } from "../eval/options.js";
 import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
 import { runOne, summarize } from "../eval/runner.js";
@@ -301,6 +302,45 @@ test("openai driver: exhausting maxSteps returns a result instead of throwing", 
     assert.equal(calls, 3);
   } finally {
     globalThis.fetch = originalFetch;
+  }
+});
+
+test("parseArgs: defaults are flag-only with a 3-minute timeout", () => {
+  const options = parseArgs([]);
+  assert.equal(options.driver, "mock");
+  assert.equal(options.model, "");
+  assert.equal(options.apiKey, "");
+  assert.equal(options.timeoutMs, 180_000);
+});
+
+test("parseArgs: --timeout is parsed as seconds", () => {
+  assert.equal(parseArgs(["--timeout", "30"]).timeoutMs, 30_000);
+});
+
+test("parseArgs: rejects a non-positive or non-numeric --timeout", () => {
+  assert.throws(() => parseArgs(["--timeout", "0"]), /positive seconds/);
+  assert.throws(() => parseArgs(["--timeout", "abc"]), /positive seconds/);
+});
+
+test("parseArgs: repeated --arm accumulates", () => {
+  assert.deepEqual(parseArgs(["--arm", "direct", "--arm", "editor"]).arms, [
+    "direct",
+    "editor",
+  ]);
+});
+
+test("parseArgs: unknown option fails", () => {
+  assert.throws(() => parseArgs(["--nope"]), /unknown option/);
+});
+
+test("parseArgs: LISP_EDITOR_* env vars are not read", () => {
+  const previous = process.env.LISP_EDITOR_API_KEY;
+  process.env.LISP_EDITOR_API_KEY = "should-not-be-read";
+  try {
+    assert.equal(parseArgs([]).apiKey, "");
+  } finally {
+    if (previous === undefined) delete process.env.LISP_EDITOR_API_KEY;
+    else process.env.LISP_EDITOR_API_KEY = previous;
   }
 });
 

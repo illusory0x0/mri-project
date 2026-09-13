@@ -2,86 +2,15 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { MockDriver } from "./drivers/mock.js";
 import { OpenAICompatibleDriver } from "./drivers/openai.js";
+import { Options, parseArgs, USAGE } from "./options.js";
 import { loadArms, loadTasks, runOne, summarize } from "./runner.js";
-import { AgentDriver, ArmName, RunResult } from "./types.js";
-
-interface Options {
-  driver: "mock" | "openai";
-  arms?: ArmName[];
-  seed: number;
-  seeds: number;
-  out: string;
-  model: string;
-  baseUrl: string;
-  apiKey: string;
-  temperature: number;
-  timeoutMs: number;
-}
-
-function parseArgs(argv: string[]): Options {
-  const options: Options = {
-    driver: "mock",
-    seed: 0,
-    seeds: 1,
-    out: path.resolve(process.cwd(), "eval/results"),
-    model: process.env.LISP_EDITOR_MODEL ?? "",
-    baseUrl: process.env.LISP_EDITOR_BASE_URL ?? "",
-    apiKey: process.env.LISP_EDITOR_API_KEY ?? "",
-    temperature: Number(process.env.LISP_EDITOR_TEMPERATURE ?? "0"),
-    timeoutMs: 180_000,
-  };
-  const arms: ArmName[] = [];
-  for (let i = 0; i < argv.length; i++) {
-    const arg = argv[i];
-    const value = () => {
-      const next = argv[++i];
-      if (next === undefined) throw new Error(`missing value for ${arg}`);
-      return next;
-    };
-    switch (arg) {
-      case "--driver":
-        options.driver = value() as Options["driver"];
-        break;
-      case "--arm":
-        arms.push(value() as ArmName);
-        break;
-      case "--seed":
-        options.seed = Number(value());
-        break;
-      case "--seeds":
-        options.seeds = Number(value());
-        break;
-      case "--out":
-        options.out = path.resolve(value());
-        break;
-      case "--model":
-        options.model = value();
-        break;
-      case "--base-url":
-        options.baseUrl = value();
-        break;
-      case "--api-key":
-        options.apiKey = value();
-        break;
-      case "--temperature":
-        options.temperature = Number(value());
-        break;
-      case "--timeout":
-        options.timeoutMs = Number(value());
-        break;
-      default:
-        throw new Error(`unknown option: ${arg}`);
-    }
-  }
-  if (arms.length > 0) options.arms = arms;
-  return options;
-}
+import { AgentDriver, RunResult } from "./types.js";
 
 function makeDriver(options: Options): AgentDriver {
   if (options.driver === "mock") return new MockDriver();
   if (!options.baseUrl || !options.apiKey || !options.model) {
     throw new Error(
-      "openai driver requires --base-url, --api-key, and --model (or LISP_EDITOR_* env vars)"
+      "openai driver requires --base-url, --api-key, and --model"
     );
   }
   return new OpenAICompatibleDriver({
@@ -93,7 +22,12 @@ function makeDriver(options: Options): AgentDriver {
 }
 
 async function main(): Promise<void> {
-  const options = parseArgs(process.argv.slice(2));
+  const argv = process.argv.slice(2);
+  if (argv.includes("--help") || argv.includes("-h")) {
+    process.stdout.write(USAGE);
+    return;
+  }
+  const options = parseArgs(argv);
   const driver = makeDriver(options);
   const allArms = await loadArms();
   const arms = options.arms
