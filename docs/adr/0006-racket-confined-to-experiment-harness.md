@@ -19,3 +19,9 @@ reimplementation.
 
 **Consequences.** Running the experiment requires Racket; running the editor
 does not. The scorer is an external-process seam the eval tests depend on.
+
+**Revisit when.** A purpose-built, Lisp-style ML language replaces Racket as the
+benchmark's language, so scoring stops depending on Racket's reader and can be
+specified exactly. Low priority: agents are unfamiliar with a new language, and
+teaching it in the system prompt costs tokens.
+

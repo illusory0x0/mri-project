@@ -25,8 +25,10 @@ exposes the tree's paths so the agent can choose where to edit.
 
 A four-arm experiment (whole-file rewrite vs. `lisp-editor` vs. `sed`/`awk` vs.
 unified diff) on 4–6-level nested tasks tests the hypothesis that structural
-editing lets an agent edit more reliably and with less effort than text
-manipulation.
+editing lets an agent edit with less effort and greater expressiveness than text
+manipulation. Bracket safety is not the headline: the `ast-edit` arm cannot
+produce a bracket mismatch by construction, so it is reported as a separate cell
+(see issue 10).
 
 ## User Stories
 
@@ -44,10 +46,10 @@ manipulation.
    so that I can populate the leaves of a program.
 6. As an AI agent, I want to copy an existing subtree from one path to another,
    so that I can reuse or move structure without retyping it.
-7. As an AI agent, I want to delete a node by replacing it with a hole, so that
-   a position that must stay filled becomes an explicit placeholder.
-8. As an AI agent, I want to bootstrap an empty file by replacing the root with a
-   hole, so that a freshly created file becomes editable.
+7. As an AI agent, I want to replace a node with a hole, so that a position that
+   must stay visible but unfilled becomes an explicit placeholder.
+8. As an AI agent, I want to insert a form into an empty file, so that a freshly
+   created file becomes editable.
 9. As an AI agent, I want a failed edit to leave the source completely unchanged,
    so that I can safely retry after an error.
 10. As an AI agent, I want clear error output when a path is invalid or out of
@@ -80,17 +82,22 @@ manipulation.
     that the nesting-depth hypothesis is exercised directly.
 24. As an experimenter, I want the same model, prompt, and temperature across
     arms, so that the only variable is the editing interface.
-25. As an experimenter, I want to measure parse-error and bracket-mismatch rates,
-    so that the headline claim is falsifiable.
-26. As an experimenter, I want to measure success@1 against an expected AST, so
-    that "did it actually produce the right program" is captured, not just
-    "is it syntactically valid".
+25. As an experimenter, I want to measure parse-error and bracket-mismatch rates
+    as a separate reliability cell, so that the bracket-safety claim stays
+    falsifiable without being the headline.
+26. As an experimenter, I want success@1 split into structural equality (same
+    program) and semantic equivalence (same probe result), so that a
+    non-canonical but equivalent answer is not scored as a failure.
 27. As an experimenter, I want to measure steps and tokens, so that the effort
     claim is quantified.
 28. As an experimenter, I want Racket used only for parsing and evaluating
     results during scoring, so that the product has no Racket runtime dependency.
 29. As an experimenter, I want per-task, per-arm result artifacts, so
     that runs are reproducible and inspectable.
+30. As an AI agent, I want to delete a node by splicing it out of its parent
+    list, so that a list shrinks and stays well-formed.
+31. As an AI agent, I want to insert a new node at a chosen index in a list, so
+    that I can add a binding, an argument, or a top-level form.
 
 ## Implementation Decisions
 
@@ -106,20 +113,23 @@ syntactic editor.
 
 **Holes.** A hole is any identifier beginning with `_`. Holes are a naming
 convention only — nothing validates or tracks them. Shape skeletons are emitted
-with named holes (e.g. `_param`, `_body`) for readability. `replace` with a hole
-is the delete operation. `outline` surfaces holes as their own kind
-(`kind: "hole"`), distinct from ordinary symbols.
+with named holes (e.g. `_param`, `_body`) for readability. A hole marks a
+position that is visible but not yet filled; it is not a deletion. Deleting is a
+separate `delete` operation (see Commands). `outline` surfaces holes as their own
+kind (`kind: "hole"`), distinct from ordinary symbols.
 
 **Addressing.** A path is an array of child indices serialized as JSON, e.g.
-`[1,2,3]`. The empty path `[]` addresses the root. Paths are resolved against the
-current AST; because the printer is deterministic, paths for a given state are
-reproducible.
+`[1,2,3]`. The root is the program: a list whose children are the top-level
+forms. The empty path `[]` addresses the whole program, and its children are
+addressed `[0]`, `[1]`, … . Paths are resolved against the current AST; because
+the printer is deterministic, paths for a given state are reproducible. The root
+is a container: a new top-level form is added with `insert … --into []`.
 
 **Interaction model.** Fully stateless. Source is read from stdin and the
 resulting source is written to stdout; an optional `--file` flag reads a file
-instead of stdin. `--in` and `--out` are **AST paths**, not filesystem paths. No
-session, no cursor, no `finish` step, no `select` step: the path is supplied on
-each invocation.
+instead of stdin. `--in`, `--out`, and `--into` are **AST paths**, and `--at` is
+a child index, not filesystem paths. No session, no cursor, no `finish` step, no
+`select` step: the path is supplied on each invocation.
 
 **Commands.**
 - `lisp-editor outline` — prints the tree as JSON, one entry per node.
@@ -132,6 +142,14 @@ each invocation.
   `<astpath>` with the shape's skeleton; unspecified children are holes.
 - `lisp-editor replace --in <astpath> --out <astpath>` — copies the node at
   `--in` and overwrites the node at `--out` with it.
+- `lisp-editor delete --out <astpath>` — removes the node at `<astpath>` from its
+  parent list. Deleting the root is an error; the parent must be a list.
+- `lisp-editor insert <shape> --into <astpath> --at <index>` — inserts the
+  shape's node into the list at `<astpath>` before child `<index>`; `<index>` may
+  equal the list's length (append). Bootstrapping an empty file is
+  `insert <shape> --into [] --at 0`.
+- `lisp-editor insert --in <srcpath> --into <astpath> --at <index>` — copies the
+  node at `--in` into the list at `<astpath>` before child `<index>`.
 
 **Shape catalogue (v1, fixed).**
 - `lambda` → `(lambda (_param) _body)`
@@ -152,30 +170,38 @@ algorithms and simple file-reading programs. No macros, no `require`, no
 quote/quasiquote.
 
 **Error and atomicity semantics.** Any invalid request (malformed input,
-unresolvable path, out-of-range index, unknown shape) produces an error and
-leaves the source unchanged; nothing is written. This makes every edit safely
-retryable.
+unresolvable path, out-of-range index, deleting the root, inserting into a
+non-list, unknown shape) produces an error and leaves the source unchanged;
+nothing is written. This makes every edit safely retryable.
 
 **Module decomposition.**
 - parser: stdin text → AST, with clear errors for malformed input.
 - printer: AST → canonical text; deterministic; this is the only place text is
   produced for the editor.
-- ops: path resolution, shape expansion, atom construction, subtree copy, and
-  hole replacement.
-- cli: argument parsing, stdin/stdout plumbing, `outline`, and `replace`
-  dispatch.
+- ops: path resolution, shape expansion, atom construction, subtree copy,
+  structural delete, and insert.
+- cli: argument parsing, stdin/stdout plumbing, `outline`, `replace`, `delete`,
+  and `insert` dispatch.
 
 The command is exposed as the `lisp-editor` bin.
 
 **Experiment harness.** A four-arm harness lives alongside the tool:
 - tasks: a fixed set of nested edit tasks, each with input source, instruction,
   expected result, and two annotations: `locate` (`explicit` | `described`) and
-  `construct` (`atom` | `wrap` | `build` | `copy` | `multi`).
+  `construct` (`atom` | `wrap` | `build` | `copy` | `multi`). A task may also
+  carry an optional `semantic` probe: an expression evaluated against both the
+  candidate and the expected program.
 - arms: `direct` (agent outputs whole-file text), `ast-edit` (agent drives
   `lisp-editor`), `text-edit` (agent uses shell/`sed`/`awk`), `diff` (agent
   replies with a unified diff that the harness applies).
 - runner: for each `(task × arm)`, runs the agent with the arm's
   prompt/tools, captures the transcript and final artifact, and scores it.
+- scoring: two independent verdicts per run. **Structural** — candidate and
+  expected parse to the same datum sequence. **Semantic** — a task-declared
+  probe evaluates to the same result for both, wherever a probe exists.
+  Evaluation is bounded to a reasonable step budget; if either side does not
+  terminate within it, the verdict is `unknown` and is excluded from the
+  semantic denominator.
 - results: per-run JSON plus a summary table.
 
 Racket appears only in task fixtures and the scorer (parse + execute to verify
@@ -212,6 +238,9 @@ integration tests establish the pattern future work should follow.
 - Comment and whitespace preservation (comments are discarded).
 - Free-text `--text` payloads.
 - Macros, `require`, quote/quasiquote, and macro expansion.
+- General semantic equivalence of arbitrary programs (undecidable). Only a
+  task-declared probe is compared, and a side that does not terminate within the
+  step budget is reported as `unknown`.
 - An MCP adapter (possible later; the CLI is the contract).
 - GitHub/remote issue publishing (local-markdown tracker is used for now).
 
@@ -224,23 +253,29 @@ integration tests establish the pattern future work should follow.
   stateless path-based `(path, node)` edit. The dependency/blocking vocabulary is
   not borrowed, only the underlying idea that structure-preserving edits prevent
   malformed programs.
-- **A caveat about the headline metric.** Because all construction goes through
-  shapes and parameterized atoms and all output goes through the deterministic
-  printer, the `ast-edit` arm is expected to have essentially zero bracket
-  mismatches by construction. The bracket-mismatch rate therefore risks being a
-  foregone conclusion; `success@1`, step count, and token count — i.e. whether
-  the vocabulary is expressive enough and whether the agent reaches the right
-  program — are the metrics that carry real signal. This should be stated
-  honestly when reporting results rather than claiming a victory on bracket
-  mismatches alone.
+- **The headline metric is effort and expressiveness, not bracket safety.**
+  Because all construction goes through shapes and parameterized atoms and all
+  output goes through the deterministic printer, the `ast-edit` arm has
+  essentially zero bracket mismatches by construction. Rather than claim a
+  victory there, the experiment takes the primary claim to be step/token cost
+  and success@1 (is the vocabulary expressive enough to reach the expected
+  program?), and reports bracket mismatch as a separate reliability cell over a
+  few deliberately bracket-dangerous tasks.
 - **Known gap in the task set.** The current fixed tasks are all small enough
   that text/`sed` editing never produced a bracket mismatch, so the reliability
-  claim is not yet testable; and each task mixes reference-resolution difficulty
+  cell is not yet populated; and each task mixes reference-resolution difficulty
   with construction difficulty, which confounds the effort comparison. See
   issue 10.
-- **Known capability gaps.** Structural delete (a hole is only a placeholder,
-  it does not remove a list element) and root bootstrap from an empty file do
-  not work; see issue 11.
+- **Known capability gaps.** The current code has no structural delete and
+  cannot bootstrap a program from an empty file; the design (`delete` and
+  `insert`, with the root as a container) is settled in issue 11 and not yet
+  implemented.
 - **Open follow-ups.** If shape/atom expressiveness proves too weak for the task
   set, a constrained free-text mode may need revisiting; that decision is
   deliberately deferred until the first experiment data exists.
+- **Future direction: a custom benchmark language.** A more stable benchmark
+  would replace Racket with a purpose-built, Lisp-style ML language whose syntax
+  and evaluation are fully specified, so scoring no longer depends on Racket's
+  reader. This is deliberately low-priority: the cost is high (agents are
+  unfamiliar with a new language, and teaching it in the system prompt consumes
+  tokens), so it is recorded as a direction, not committed work.

@@ -24,8 +24,8 @@ _Avoid_: expression, sexp
 
 **Hole**:
 An identifier beginning with `_`, marking a position that is visible but not
-yet filled. A naming convention, not a validated construct.
-_Avoid_: placeholder, blank, underscore
+yet filled. A naming convention, not a validated construct, and not a deletion.
+_Avoid_: placeholder, blank, underscore, delete
 
 **Path**:
 An array of child indices naming exactly one node; the root is `[]`.
@@ -48,9 +48,19 @@ for the children the caller must still fill.
 _Avoid_: template, pattern
 
 **Replace**:
-The single edit operation: overwrite the node at one path with a shape, a copied
+The edit operation that overwrites the node at one path with a shape, a copied
 subtree, or a hole.
 _Avoid_: update, patch
+
+**Delete**:
+The edit operation that removes a node by splicing it out of its parent list.
+The root cannot be deleted.
+_Avoid_: remove, drop, cut
+
+**Insert**:
+The edit operation that places a new node — from a shape or a copied subtree —
+at a chosen index in a list. Adding a top-level form is insertion into the root.
+_Avoid_: add, append
 
 **Task**:
 One editing problem in the experiment: an input program, an instruction, an
@@ -76,6 +86,22 @@ The component that parses a candidate program, checks bracket balance,
 evaluates it, and compares it against the expected program.
 _Avoid_: judge, grader, checker
 
+**Probe**:
+A task-declared expression evaluated against both a candidate and the expected
+program to decide semantic equivalence.
+_Avoid_: test, check
+
+**Semantic equivalence**:
+Two programs are semantically equivalent when the task's probe yields the same
+result for both. General program equivalence is undecidable; only the probe is
+compared.
+_Avoid_: behavioral equality
+
+**Unknown** (semantic verdict):
+Recorded when a side does not terminate within the step budget; excluded from the
+semantic denominator.
+_Avoid_: timeout, failure
+
 **Driver**:
 The agent backend that runs an arm against a task.
 _Avoid_: model, client, runner
@@ -86,6 +112,7 @@ token count.
 _Avoid_: trial, attempt
 
 **Success@1**:
-A run whose single final artifact both evaluates and matches the expected
-program.
+A run judged on its single final artifact, reported twice: structurally (the
+candidate and expected parse to the same datum sequence) and semantically (the
+task's probe yields the same result for both).
 _Avoid_: accuracy, pass rate
