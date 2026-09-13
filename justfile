@@ -30,4 +30,4 @@ report: build
 
 # Count lines of code, skipping build output, deps, and scratch/generated files.
 count-lines:
-	cloc . --exclude-dir=node_modules,dist,.git,.scratch,coverage
+	cloc . --exclude-dir=node_modules,dist,.git,.scratch,coverage,eval/results
