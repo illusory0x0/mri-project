@@ -28,7 +28,7 @@ function parseArgs(argv: string[]): Options {
     baseUrl: process.env.LISP_EDITOR_BASE_URL ?? "",
     apiKey: process.env.LISP_EDITOR_API_KEY ?? "",
     temperature: Number(process.env.LISP_EDITOR_TEMPERATURE ?? "0"),
-    timeoutMs: Number(process.env.LISP_EDITOR_RUN_TIMEOUT_MS ?? "180000"),
+    timeoutMs: 180_000,
   };
   const arms: ArmName[] = [];
   for (let i = 0; i < argv.length; i++) {
