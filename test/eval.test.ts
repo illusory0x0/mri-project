@@ -68,6 +68,57 @@ test("runOne: tool arms cannot bypass the tool with typed output", async () => {
   assert.notEqual(result.finalArtifact.trim(), task.expected);
 });
 
+test("openai driver: retries an empty response and eventually succeeds", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => {
+    calls++;
+    const empty = calls < 3;
+    return {
+      ok: true,
+      status: 200,
+      async json() {
+        return empty
+          ? { choices: [], usage: { total_tokens: 3 } }
+          : {
+              choices: [
+                {
+                  message: {
+                    role: "assistant",
+                    content: "```lisp\n(done)\n```",
+                  },
+                },
+              ],
+              usage: { total_tokens: 3 },
+            };
+      },
+    };
+  }) as unknown as typeof fetch;
+
+  try {
+    const driver = new OpenAICompatibleDriver({
+      baseUrl: "http://example.test",
+      apiKey: "test",
+      model: "test",
+      maxSteps: 3,
+      retryDelayMs: 1,
+    });
+    const result = await driver.run({
+      arm: directArm,
+      task,
+      tools: [],
+      ctx: { async exec() {
+        return "{}";
+      } },
+      seed: 0,
+    });
+    assert.equal(calls, 3);
+    assert.equal(result.finalArtifact, "(done)");
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
 test("openai driver: exhausting maxSteps returns a result instead of throwing", async () => {
   const originalFetch = globalThis.fetch;
   let calls = 0;

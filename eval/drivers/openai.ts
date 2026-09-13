@@ -6,6 +6,8 @@ export interface OpenAICompatibleOptions {
   model: string;
   temperature?: number;
   maxSteps?: number;
+  maxRetries?: number;
+  retryDelayMs?: number;
 }
 
 interface ChatMessage {
@@ -28,12 +30,18 @@ export function extractCodeBlock(text: string): string {
   return (match ? match[1] : text).trim();
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export class OpenAICompatibleDriver implements AgentDriver {
   constructor(private readonly options: OpenAICompatibleOptions) {}
 
   async run(request: DriverRequest): Promise<DriverResult> {
     const { arm, task, tools, ctx } = request;
     const maxSteps = this.options.maxSteps ?? 25;
+    const maxRetries = this.options.maxRetries ?? 3;
+    const retryDelayMs = this.options.retryDelayMs ?? 1000;
     const messages: ChatMessage[] = [
       { role: "system", content: arm.systemPrompt },
       {
@@ -63,27 +71,37 @@ export class OpenAICompatibleDriver implements AgentDriver {
       };
       if (toolDefs.length > 0) body.tools = toolDefs;
 
-      const response = await fetch(
-        `${this.options.baseUrl.replace(/\/$/, "")}/chat/completions`,
-        {
-          method: "POST",
-          headers: {
-            "content-type": "application/json",
-            authorization: `Bearer ${this.options.apiKey}`,
-          },
-          body: JSON.stringify(body),
+      let message: ChatMessage | undefined;
+      for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        if (attempt > 0) await sleep(retryDelayMs * attempt);
+
+        const response = await fetch(
+          `${this.options.baseUrl.replace(/\/$/, "")}/chat/completions`,
+          {
+            method: "POST",
+            headers: {
+              "content-type": "application/json",
+              authorization: `Bearer ${this.options.apiKey}`,
+            },
+            body: JSON.stringify(body),
+          }
+        );
+        if (!response.ok) {
+          throw new Error(
+            `LLM request failed: ${response.status} ${await response.text()}`
+          );
         }
-      );
-      if (!response.ok) {
+
+        const data = (await response.json()) as ChatResponse;
+        tokens += data.usage?.total_tokens ?? 0;
+        message = data.choices?.[0]?.message;
+        if (message) break;
+      }
+      if (!message) {
         throw new Error(
-          `LLM request failed: ${response.status} ${await response.text()}`
+          `LLM response had no message after ${maxRetries + 1} attempts`
         );
       }
-
-      const data = (await response.json()) as ChatResponse;
-      tokens += data.usage?.total_tokens ?? 0;
-      const message = data.choices?.[0]?.message;
-      if (!message) throw new Error("LLM response had no message");
       messages.push(message);
       if (typeof message.content === "string" && message.content.trim()) {
         lastContent = message.content;
