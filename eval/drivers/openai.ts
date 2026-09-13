@@ -26,7 +26,7 @@ interface ChatResponse {
 }
 
 export function extractCodeBlock(text: string): string {
-  const match = text.match(/```(?:lisp|racket|scheme)?\s*\n([\s\S]*?)```/);
+  const match = text.match(/```(?:lisp|racket|scheme|diff)?\s*\n([\s\S]*?)```/);
   return (match ? match[1] : text).trim();
 }
 

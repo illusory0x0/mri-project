@@ -1,6 +1,7 @@
 import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
+import { applyPatch } from "./patch.js";
 import { runProcess } from "./process.js";
 import { scoreArtifact } from "./scorer.js";
 import { TOOL_SPECS } from "./tools.js";
@@ -152,10 +153,33 @@ export async function runOne(
     };
   }
 
-  const finalArtifact =
-    arm.tools.length === 0
-      ? result.finalArtifact ?? workspace.source
-      : workspace.source;
+  let finalArtifact: string;
+  if (arm.diff) {
+    const diffText = result.finalArtifact ?? "";
+    try {
+      finalArtifact = await applyPatch(workspace.source, diffText, controller.signal);
+    } catch (error) {
+      return {
+        taskId: task.id,
+        arm: arm.name,
+        model: meta.model,
+        temperature: meta.temperature,
+        parsed: false,
+        parenMismatch: false,
+        evaluates: false,
+        success: false,
+        parseError: `diff apply failed: ${error instanceof Error ? error.message : String(error)}`,
+        steps: result.steps,
+        tokens: result.tokens,
+        finalArtifact: diffText,
+        transcript: result.transcript,
+      };
+    }
+  } else if (arm.tools.length === 0) {
+    finalArtifact = result.finalArtifact ?? workspace.source;
+  } else {
+    finalArtifact = workspace.source;
+  }
   const score = await scoreArtifact(finalArtifact, task.expected);
 
   return {

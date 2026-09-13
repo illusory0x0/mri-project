@@ -1,5 +1,14 @@
 import { AgentDriver, DriverRequest, DriverResult } from "../types.js";
 
+function makeDiff(input: string, expected: string): string {
+  return `--- program.rkt
++++ program.rkt
+@@ -1,1 +1,1 @@
+-${input}
++${expected}
+`;
+}
+
 export class MockDriver implements AgentDriver {
   async run(request: DriverRequest): Promise<DriverResult> {
     const { arm, task, ctx } = request;
@@ -24,6 +33,9 @@ export class MockDriver implements AgentDriver {
       finalArtifact = "(define (f x)";
     } else if (task.id.includes("wrong")) {
       finalArtifact = "(define (f x) 0)";
+    }
+    if (arm.diff) {
+      finalArtifact = makeDiff(task.input, task.id.includes("broken") ? "(define (f x)" : task.expected);
     }
 
     return { finalArtifact, steps, tokens: 100 + steps * 10, transcript };

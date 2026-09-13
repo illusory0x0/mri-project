@@ -6,7 +6,7 @@ import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
 import { runOne, summarize } from "../eval/runner.js";
 import { scoreArtifact } from "../eval/scorer.js";
-import { AgentDriver, Arm, RunResult, Task } from "../eval/types.js";
+import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
 const directArm: Arm = { name: "direct", systemPrompt: "test", tools: [] };
 const editorArm: Arm = {
@@ -15,6 +15,7 @@ const editorArm: Arm = {
   tools: ["lisp_editor"],
 };
 const sedawkArm: Arm = { name: "sedawk", systemPrompt: "test", tools: ["shell"] };
+const diffArm: Arm = { name: "diff", systemPrompt: "test", tools: [], diff: true };
 
 const task: Task = {
   id: "t-increment",
@@ -69,6 +70,30 @@ test("runOne: tool arms cannot bypass the tool with typed output", async () => {
   const result = await runOne(new MockDriver(), editorArm, task);
   assert.equal(result.finalArtifact.trim(), "_");
   assert.notEqual(result.finalArtifact.trim(), task.expected);
+});
+
+test("runOne: diff arm applies the patch and scores the result", async () => {
+  const result = await runOne(new MockDriver(), diffArm, task);
+  assert.equal(result.success, true);
+  assert.equal(result.parsed, true);
+  assert.equal(result.steps, 0);
+  assert.equal(result.finalArtifact.trim(), task.expected);
+});
+
+test("runOne: diff arm with malformed patch marks failure without throwing", async () => {
+  const malformedDriver: AgentDriver = {
+    async run(request: DriverRequest): Promise<DriverResult> {
+      return {
+        finalArtifact: "this is not a valid diff",
+        steps: 0,
+        tokens: 5,
+        transcript: [],
+      };
+    },
+  };
+  const result = await runOne(malformedDriver, diffArm, task);
+  assert.equal(result.success, false);
+  assert.match(result.parseError ?? "", /diff apply failed/);
 });
 
 test("openai driver: retries an empty response and eventually succeeds", async () => {

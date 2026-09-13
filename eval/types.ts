@@ -29,6 +29,7 @@ export interface Arm {
   name: ArmName;
   systemPrompt: string;
   tools: string[];
+  diff?: boolean;
   model?: string;
   temperature?: number;
 }
