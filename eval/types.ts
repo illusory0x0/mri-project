@@ -90,3 +90,15 @@ export interface ArmSummary {
   meanSteps: number;
   meanTokens: number;
 }
+
+export interface ReportData {
+  generatedAt: string;
+  models: string[];
+  temperatures: string[];
+  armNames: string[];
+  armDefs: Arm[];
+  toolSpecs: Record<string, ToolSpec>;
+  tasks: Task[];
+  runs: RunResult[];
+  summary: ArmSummary[];
+}

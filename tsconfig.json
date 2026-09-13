@@ -12,5 +12,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src", "test", "eval"]
+  "include": ["src", "test", "eval"],
+  "exclude": ["node_modules", "dist", "eval/report.client.ts"]
 }
