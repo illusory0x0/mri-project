@@ -40,6 +40,9 @@ p.sub { color: var(--muted); margin: 0 0 4px; }
 section.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; margin: 18px 0; }
 .note { color: var(--muted); font-size: 12.5px; margin: 10px 0 0; }
 .note a { color: var(--accent); }
+.pane-stack { display: grid; }
+.pane-stack > .pane { grid-area: 1 / 1; min-width: 0; }
+.pane-stack > .pane.hidden { display: block; visibility: hidden; }
 table.grid { width: 100%; border-collapse: collapse; }
 table.grid th, table.grid td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
 table.grid th { color: var(--muted); font-weight: 600; font-size: 12.5px; white-space: nowrap; }
@@ -146,14 +149,20 @@ table.keyval th { width: 130px; color: var(--muted); font-weight: 500; }
   <section class="panel">
     <h3>汇总</h3>
     <div class="tabbar" id="summarytabs">
-      <button type="button" class="tab active" data-target="pane-headline">编辑方式对比</button>
-      <button type="button" class="tab" data-target="pane-bracket">括号危险可靠性单元</button>
+      <button type="button" class="tab active" data-target="pane-headline" data-hash="headline">编辑方式对比</button>
+      <button type="button" class="tab" data-target="pane-bracket-success" data-hash="bracket-success">括号危险·成功率</button>
+      <button type="button" class="tab" data-target="pane-bracket-rates" data-hash="bracket-rates">括号危险·失败率</button>
     </div>
-    <div class="pane" id="pane-headline">
-      <div id="summary"></div>
-    </div>
-    <div class="pane hidden" id="pane-bracket">
-      <div id="bracket-danger"></div>
+    <div class="pane-stack">
+      <div class="pane" id="pane-headline">
+        <div id="summary"></div>
+      </div>
+      <div class="pane hidden" id="pane-bracket-success">
+        <div id="bracket-success-body"></div>
+      </div>
+      <div class="pane hidden" id="pane-bracket-rates">
+        <div id="bracket-rates-body"></div>
+      </div>
     </div>
   </section>
   <section class="panel">

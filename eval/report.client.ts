@@ -166,25 +166,28 @@ function renderSummary(): void {
   const note =
     '<p class="note">上方汇总已排除 ' +
     excluded +
-    ' 个括号危险任务（见 <a href="#bracket-danger">括号危险可靠性单元</a>）。</p>';
+    ' 个括号危险任务（见 <a href="#bracket-success">括号危险可靠性单元</a>）。</p>';
   document.getElementById("summary")!.innerHTML = summaryTable(DATA.summary) + note;
 }
 
 function renderBracketDanger(): void {
   const cell = DATA.bracketDanger;
-  const box = document.getElementById("bracket-danger");
-  if (!box) return;
+  const successBox = document.getElementById("bracket-success-body");
+  const ratesBox = document.getElementById("bracket-rates-body");
+  if (!successBox || !ratesBox) return;
   if (!cell || cell.summary.length === 0) {
-    box.innerHTML = '<p class="muted">没有括号危险任务的结果。</p>';
+    const empty = '<p class="muted">没有括号危险任务的结果。</p>';
+    successBox.innerHTML = empty;
+    ratesBox.innerHTML = empty;
     return;
   }
-  let html = summaryTable(cell.summary);
-  html +=
+  successBox.innerHTML =
+    summaryTable(cell.summary) +
     '<p class="note">括号危险单元包含 ' +
     cell.taskIds.length +
     " 个任务：" +
     esc(cell.taskIds.join(", ")) +
-    "。这些任务已从上方表格中排除，其解析失败率、括号不匹配率与补丁应用失败率在此单独统计。</p>";
+    "。这些任务已从上方表格中排除。</p>";
   let rates =
     '<table class="grid"><thead><tr><th>编辑方式</th><th class="num">解析失败率</th><th class="num">括号不匹配率</th><th class="num">补丁应用失败率</th></tr></thead><tbody>';
   cell.summary.forEach(function (row) {
@@ -197,7 +200,12 @@ function renderBracketDanger(): void {
       '<td class="num">' + fmt(row.hunkFailureRate * 100) + "%</td>" +
       "</tr>";
   });
-  box.innerHTML = html + rates + "</tbody></table>";
+  ratesBox.innerHTML =
+    rates +
+    "</tbody></table>" +
+    '<p class="note">在 ' +
+    cell.taskIds.length +
+    " 个括号危险任务上的失败构成；这些任务已从上方汇总中排除。</p>";
 }
 
 function renderMatrix(): void {
@@ -567,10 +575,32 @@ function openDetail(taskId: string, arm: string): void {
   overlay.classList.remove("hidden");
 }
 
-function setupTabBar(id: string): void {
-  const bar = document.getElementById(id);
+const SUMMARY_TABS_ID = "summarytabs";
+
+function summaryTabButtons(): HTMLElement[] {
+  const bar = document.getElementById(SUMMARY_TABS_ID);
+  return bar ? Array.from(bar.querySelectorAll<HTMLElement>(".tab")) : [];
+}
+
+function activateSummaryTab(hash: string): void {
+  const buttons = summaryTabButtons();
+  if (buttons.length === 0) return;
+  const wanted = hash.replace(/^#/, "");
+  const selected =
+    buttons.filter(function (b) {
+      return b.getAttribute("data-hash") === wanted;
+    })[0] || buttons[0];
+  buttons.forEach(function (b) {
+    const active = b === selected;
+    b.classList.toggle("active", active);
+    const pane = document.getElementById(b.getAttribute("data-target") || "");
+    if (pane) pane.classList.toggle("hidden", !active);
+  });
+}
+
+function setupSummaryTabs(): void {
+  const bar = document.getElementById(SUMMARY_TABS_ID);
   if (!bar) return;
-  const buttons = Array.from(bar.querySelectorAll<HTMLElement>(".tab"));
   bar.addEventListener("click", function (e) {
     const target = e.target as Element | null;
     const btn =
@@ -578,13 +608,15 @@ function setupTabBar(id: string): void {
         ? (target.closest(".tab") as HTMLElement | null)
         : null;
     if (!btn) return;
-    buttons.forEach(function (b) {
-      const active = b === btn;
-      b.classList.toggle("active", active);
-      const pane = document.getElementById(b.getAttribute("data-target") || "");
-      if (pane) pane.classList.toggle("hidden", !active);
-    });
+    const hash = btn.getAttribute("data-hash");
+    if (!hash) return;
+    if (location.hash.replace(/^#/, "") === hash) activateSummaryTab(hash);
+    else location.hash = hash;
   });
+  window.addEventListener("hashchange", function () {
+    activateSummaryTab(location.hash);
+  });
+  activateSummaryTab(location.hash);
 }
 
 function main(): void {
@@ -594,7 +626,7 @@ function main(): void {
   renderSummary();
   renderMatrix();
   renderBracketDanger();
-  setupTabBar("summarytabs");
+  setupSummaryTabs();
   document.getElementById("matrix")!.addEventListener("click", function (e) {
     const target = e.target as Element | null;
     const btn = target && target.closest ? target.closest(".cell") : null;
