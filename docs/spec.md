@@ -28,7 +28,7 @@ unified diff) on deeply nested tasks tests the hypothesis that structural
 editing lets an agent edit with less effort and greater expressiveness than text
 manipulation. Bracket safety is not the headline: the `ast-edit` arm cannot
 produce a bracket mismatch by construction, so it is reported as a separate cell
-(see issue 10).
+(see ticket 17).
 
 ## User Stories
 
@@ -267,11 +267,11 @@ integration tests establish the pattern future work should follow.
   that text/`sed` editing never produced a bracket mismatch, so the reliability
   cell is not yet populated; and each task mixes reference-resolution difficulty
   with construction difficulty, which confounds the effort comparison. See
-  issue 10.
+  tickets 16 and 17.
 - **Known capability gaps.** The current code has no structural delete and
   cannot bootstrap a program from an empty file; the design (`delete` and
-  `insert`, with the root as a container) is settled in issue 11 and not yet
-  implemented.
+  `insert`, with the root as a container) is settled in tickets 12 and 13 and not
+  yet implemented.
 - **Open follow-ups.** If shape/atom expressiveness proves too weak for the task
   set, a constrained free-text mode may need revisiting; that decision is
   deliberately deferred until the first experiment data exists.
