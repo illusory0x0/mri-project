@@ -134,11 +134,13 @@ function renderOutline(nodes) {
   nodes.slice(0, 40).forEach(function (n) {
     var row = el("div", "orow" + (n.kind === "hole" ? " hole" : ""));
     row.appendChild(el("span", "opath", JSON.stringify(n.path)));
-    if (n.kind === "list") {
-      row.appendChild(el("span", "okind", "list"));
-      row.appendChild(el("span", "otag", n.head == null ? "(head)" : "head:" + n.head));
-    } else {
+    if (n.kind === "apply") {
+      row.appendChild(el("span", "okind", "apply"));
+      row.appendChild(el("span", "otag", n.head));
+    } else if (n.value != null) {
       row.appendChild(el("span", "otag", n.kind + ":" + n.value));
+    } else {
+      row.appendChild(el("span", "okind", n.kind));
     }
     wrap.appendChild(row);
   });

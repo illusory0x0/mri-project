@@ -1,32 +1,35 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { AtomEntry, find, ListEntry, outline, run } from "./helpers.js";
+import { find, outline, run } from "./helpers.js";
 
-test("outline: parses a simple program and exposes paths, kinds and heads", () => {
+test("outline: classifies nodes by semantic kind", () => {
   const entries = outline("(define (f x) x)");
   assert.equal(find(entries, [])?.kind, "list");
-  assert.equal((find(entries, []) as ListEntry).head, null);
-  assert.equal(find(entries, [0])?.kind, "list");
-  assert.equal((find(entries, [0]) as ListEntry).head, "define");
+  assert.equal(find(entries, [0])?.kind, "define");
   assert.equal(find(entries, [0, 0])?.kind, "symbol");
-  assert.equal((find(entries, [0, 0]) as AtomEntry).value, "define");
-  assert.equal((find(entries, [0, 1]) as ListEntry).head, "f");
-  assert.equal((find(entries, [0, 1, 0]) as AtomEntry).value, "f");
-  assert.equal((find(entries, [0, 2]) as AtomEntry).value, "x");
+  assert.equal(find(entries, [0, 0])?.value, "define");
+  assert.equal(find(entries, [0, 1])?.kind, "apply");
+  assert.equal(find(entries, [0, 1])?.head, "f");
+  assert.equal(find(entries, [0, 1, 0])?.value, "f");
+  assert.equal(find(entries, [0, 2])?.kind, "symbol");
+  assert.equal(find(entries, [0, 2])?.value, "x");
 });
 
 test("outline: lifts underscore identifiers to kind hole", () => {
   const entries = outline("(lambda (_param) _body)");
+  assert.equal(find(entries, [0])?.kind, "lambda");
+  assert.equal(find(entries, [0, 1])?.kind, "list");
   assert.equal(find(entries, [0, 1, 0])?.kind, "hole");
+  assert.equal(find(entries, [0, 1, 0])?.value, "_param");
   assert.equal(find(entries, [0, 2])?.kind, "hole");
-  assert.equal((find(entries, [0, 1, 0]) as AtomEntry).value, "_param");
-  assert.equal((find(entries, [0, 2]) as AtomEntry).value, "_body");
+  assert.equal(find(entries, [0, 2])?.value, "_body");
   assert.equal(find(entries, [0, 0])?.kind, "symbol");
 });
 
 test("outline: accepts comments and discards them", () => {
   const entries = outline("; a comment\n(foo)\n");
-  assert.equal((find(entries, [0]) as ListEntry).head, "foo");
+  assert.equal(find(entries, [0])?.kind, "apply");
+  assert.equal(find(entries, [0])?.head, "foo");
   assert.equal(entries.length, 3);
 });
 

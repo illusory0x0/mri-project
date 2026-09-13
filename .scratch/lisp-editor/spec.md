@@ -121,11 +121,12 @@ session, no cursor, no `finish` step, no `select` step: the path is supplied on
 each invocation.
 
 **Commands.**
-- `lisp-editor outline` — prints the tree as JSON, one entry per node, as a
-  discriminated union. A list node is `{ path, kind: "list", head }`, where
-  `head` is the head symbol's name (or `null`). An atom node is
-  `{ path, kind, value }`, where `kind` is `"symbol"`, `"number"`, `"string"`,
-  or `"hole"` for `_`-prefixed identifiers.
+- `lisp-editor outline` — prints the tree as JSON, one entry per node.
+  `kind` is the semantic construct: `"define"`, `"lambda"`, `"let"`, `"let*"`,
+  `"if"`, `"cond"` for special forms; `"apply"` (with a `head` field naming the
+  operator) for function calls; `"list"` for skeletons and data lists whose head
+  is a hole or non-symbol; `"symbol"`, `"number"`, `"string"`, or `"hole"`
+  (with a `value` field) for atoms.
 - `lisp-editor replace <shape> --out <astpath>` — replaces the node at
   `<astpath>` with the shape's skeleton; unspecified children are holes.
 - `lisp-editor replace --in <astpath> --out <astpath>` — copies the node at

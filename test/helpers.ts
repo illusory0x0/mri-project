@@ -24,19 +24,12 @@ export function ok(input: string, args: string[]): string {
   return result.stdout;
 }
 
-export interface ListEntry {
+export interface Entry {
   path: number[];
-  kind: "list";
-  head: string | null;
+  kind: string;
+  head?: string;
+  value?: string;
 }
-
-export interface AtomEntry {
-  path: number[];
-  kind: "symbol" | "number" | "string" | "hole";
-  value: string;
-}
-
-export type Entry = ListEntry | AtomEntry;
 
 export function outline(input: string): Entry[] {
   const result = run(input, ["outline"]);

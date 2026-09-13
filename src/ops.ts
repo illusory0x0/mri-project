@@ -117,39 +117,45 @@ export function replaceAt(root: Node, path: number[], next: Node): Node {
   return { type: "list", items };
 }
 
-export type OutlineKind = "list" | "symbol" | "number" | "string" | "hole";
+export type OutlineKind =
+  | "define" | "lambda" | "let" | "let*" | "if" | "cond"
+  | "apply"
+  | "list"
+  | "symbol" | "number" | "string" | "hole";
 
-export interface OutlineListEntry {
+export interface OutlineEntry {
   path: number[];
-  kind: "list";
-  head: string | null;
+  kind: OutlineKind;
+  head?: string;
+  value?: string;
 }
 
-export interface OutlineAtomEntry {
-  path: number[];
-  kind: "symbol" | "number" | "string" | "hole";
-  value: string;
-}
+const FORM_KEYWORDS = new Set(["define", "lambda", "let", "let*", "if", "cond"]);
 
-export type OutlineEntry = OutlineListEntry | OutlineAtomEntry;
-
-function entryFor(node: Node, path: number[]): OutlineEntry {
+function classify(node: Node): Omit<OutlineEntry, "path"> {
   if (node.type === "atom") {
-    if (isHole(node)) return { path, kind: "hole", value: node.value };
-    return { path, kind: node.tag, value: node.value };
+    if (isHole(node)) return { kind: "hole", value: node.value };
+    return { kind: node.tag, value: node.value };
   }
   const head = node.items[0];
-  const headName =
-    head !== undefined && head.type === "atom" && head.tag === "symbol"
-      ? head.value
-      : null;
-  return { path, kind: "list", head: headName };
+  if (
+    head !== undefined &&
+    head.type === "atom" &&
+    head.tag === "symbol" &&
+    !isHole(head)
+  ) {
+    if (FORM_KEYWORDS.has(head.value)) {
+      return { kind: head.value as OutlineKind };
+    }
+    return { kind: "apply", head: head.value };
+  }
+  return { kind: "list" };
 }
 
 export function outline(root: Node): OutlineEntry[] {
   const entries: OutlineEntry[] = [];
   const walk = (node: Node, path: number[]): void => {
-    entries.push(entryFor(node, path));
+    entries.push({ path, ...classify(node) });
     if (node.type === "list") {
       node.items.forEach((child, index) => walk(child, path.concat(index)));
     }

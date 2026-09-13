@@ -6,7 +6,7 @@ export const TOOL_SPECS: Record<string, ToolSpec> = {
     description:
       "Edit the current Lisp program by AST path. `args` is the full argument list to the lisp-editor CLI. The current program is fed on stdin and the edited program is returned on success.\n" +
       "Commands:\n" +
-      "- [\"outline\"] lists every node as {path, kind, ...}: a list node has kind \"list\" and a head; an atom node has kind \"symbol\", \"number\", or \"string\" and a value; _-prefixed symbols have kind \"hole\". Call this first to find paths.\n" +
+      "- [\"outline\"] lists every node as {path, kind, ...}. kind is the semantic construct: \"define\", \"lambda\", \"let\", \"if\", \"cond\" for special forms; \"apply\" (with a head field naming the operator) for function calls; \"list\" for skeletons and data lists; \"symbol\", \"number\", \"string\", or \"hole\" (with a value field) for atoms. Call this first to find paths.\n" +
       "- [\"replace\", \"<shape>\", \"--out\", \"<path>\"] replaces the node at <path> with a shape skeleton.\n" +
       "- [\"replace\", \"--in\", \"<srcPath>\", \"--out\", \"<dstPath>\"] copies an existing subtree.\n" +
       "A path is a JSON array of child indices, e.g. [0,2,1]; the root is [].\n" +
