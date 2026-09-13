@@ -52,6 +52,7 @@ export class OpenAICompatibleDriver implements AgentDriver {
 
     let steps = 0;
     let tokens = 0;
+    let lastContent = "";
 
     for (let i = 0; i < maxSteps; i++) {
       const body: Record<string, unknown> = {
@@ -84,6 +85,9 @@ export class OpenAICompatibleDriver implements AgentDriver {
       const message = data.choices?.[0]?.message;
       if (!message) throw new Error("LLM response had no message");
       messages.push(message);
+      if (typeof message.content === "string" && message.content.trim()) {
+        lastContent = message.content;
+      }
 
       const toolCalls = message.tool_calls;
       if (Array.isArray(toolCalls) && toolCalls.length > 0) {
@@ -113,6 +117,11 @@ export class OpenAICompatibleDriver implements AgentDriver {
       };
     }
 
-    throw new Error(`agent did not finish within ${maxSteps} steps`);
+    return {
+      finalArtifact: lastContent ? extractCodeBlock(lastContent) : undefined,
+      steps,
+      tokens,
+      transcript: messages,
+    };
   }
 }

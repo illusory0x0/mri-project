@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { MockDriver } from "../eval/drivers/mock.js";
+import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
 import { runOne, summarize } from "../eval/runner.js";
 import { scoreArtifact } from "../eval/scorer.js";
 import { Arm, RunResult, Task } from "../eval/types.js";
@@ -65,6 +66,65 @@ test("runOne: tool arms cannot bypass the tool with typed output", async () => {
   const result = await runOne(new MockDriver(), editorArm, task, 0);
   assert.equal(result.finalArtifact.trim(), "_");
   assert.notEqual(result.finalArtifact.trim(), task.expected);
+});
+
+test("openai driver: exhausting maxSteps returns a result instead of throwing", async () => {
+  const originalFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = (async () => ({
+    ok: true,
+    status: 200,
+    async json() {
+      calls++;
+      return {
+        choices: [
+          {
+            message: {
+              role: "assistant",
+              content: null,
+              tool_calls: [
+                {
+                  id: `c${calls}`,
+                  function: {
+                    name: "lisp_editor",
+                    arguments: JSON.stringify({ args: ["outline"] }),
+                  },
+                },
+              ],
+            },
+          },
+        ],
+        usage: { total_tokens: 5 },
+      };
+    },
+  })) as unknown as typeof fetch;
+
+  try {
+    const driver = new OpenAICompatibleDriver({
+      baseUrl: "http://example.test",
+      apiKey: "test",
+      model: "test",
+      maxSteps: 3,
+    });
+    let toolExecs = 0;
+    const result = await driver.run({
+      arm: editorArm,
+      task,
+      tools: [{ name: "lisp_editor", description: "test", parameters: {} }],
+      ctx: {
+        async exec() {
+          toolExecs++;
+          return "{}";
+        },
+      },
+      seed: 0,
+    });
+    assert.equal(result.steps, 3);
+    assert.equal(toolExecs, 3);
+    assert.equal(calls, 3);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("summarize: aggregates rates per arm", () => {
