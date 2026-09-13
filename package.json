@@ -8,13 +8,6 @@
   "bin": {
     "lisp-editor": "./dist/src/cli.js"
   },
-  "scripts": {
-    "build": "rm -rf dist && esbuild 'src/**/*.ts' 'eval/**/*.ts' 'test/**/*.ts' --outdir=dist --outbase=. --platform=node --target=node22 --format=esm && esbuild eval/report.client.ts --bundle --format=iife --platform=browser --target=es2022 --outfile=dist/eval/report.client.js",
-    "typecheck": "tsc --noEmit && tsc -p eval/tsconfig.client.json",
-    "test": "pnpm run build && node --test dist/test/*.test.js",
-    "eval": "pnpm run build && node dist/eval/run.js",
-    "report": "pnpm run build && node dist/eval/report.js"
-  },
   "devDependencies": {
     "@types/node": "^22.10.0",
     "esbuild": "^0.28.2",

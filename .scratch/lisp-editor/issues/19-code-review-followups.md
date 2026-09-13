@@ -24,4 +24,4 @@ and settle one metadata definition.
       returns the containing list's depth when child counts differ, one less than
       the added/removed node. Either keep it (and pin it with a test) or return
       the affected node's depth and recompute the stored run metadata.
-- [ ] `pnpm run typecheck` and `pnpm test` pass.
+- [ ] `just typecheck` and `just test` pass.

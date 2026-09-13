@@ -6,10 +6,15 @@ agent can edit programs by manipulating structure instead of raw text.
 
 ## Setup
 
+Tasks are run with [`just`](https://github.com/casey/just); `pnpm` only installs
+dependencies.
+
 ```sh
 pnpm install
-pnpm run build     # compile TypeScript to dist/
-pnpm test          # build + run the test suite
+just build     # compile TypeScript to dist/
+just typecheck # type-check without emitting
+just test      # build + run the test suite
+just           # list all recipes
 ```
 
 ## Evaluating the tasks
@@ -39,7 +44,7 @@ as environment variables and invoke the eval script:
 set -gx OPENAI_BASE_URL <url>;
 set -gx OPENAI_API_KEY <apikey>;
 
-pnpm run eval \
+just eval \
   --driver openai \
   --base-url $OPENAI_BASE_URL \
   --api-key $OPENAI_API_KEY \
@@ -51,5 +56,5 @@ Run `node dist/eval/run.js -h` for the full flag list.
 ### Read the results
 
 ```sh
-pnpm run report    # writes eval/report.html to browse runs interactively
+just report        # writes eval/report.html to browse runs interactively
 ```

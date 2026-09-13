@@ -17,4 +17,4 @@ hunk-application failure.
 - [ ] The bracket-danger cell shows parse-error, bracket-mismatch, and
       hunk-application rates separately.
 - [ ] Per-run artifacts record which failure occurred.
-- [ ] `pnpm run typecheck` and `pnpm test` pass.
+- [ ] `just typecheck` and `just test` pass.

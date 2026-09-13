@@ -19,4 +19,4 @@ rather than being reported as `different`.
 - [ ] When reading a candidate fails, the semantic verdict is `unknown`, not
       `different`.
 - [ ] Covered by a scorer test through the existing process seam.
-- [ ] `pnpm run typecheck` and `pnpm test` pass.
+- [ ] `just typecheck` and `just test` pass.

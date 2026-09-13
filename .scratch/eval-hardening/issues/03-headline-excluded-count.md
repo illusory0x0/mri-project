@@ -12,4 +12,4 @@ the whole run.
 - [ ] The headline summary displays the number of bracket-danger tasks excluded
       from it.
 - [ ] That number matches the bracket-danger cell's task list.
-- [ ] `pnpm run typecheck` and `pnpm test` pass.
+- [ ] `just typecheck` and `just test` pass.
