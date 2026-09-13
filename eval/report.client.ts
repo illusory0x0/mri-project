@@ -138,8 +138,8 @@ function summaryTable(rows: ArmSummary[]): string {
   rows.forEach(function (row) {
     const c = armColor(row.arm);
     const semantic = row.semanticScored
-      ? healthBar(row.semanticRate, 1, row.semanticRate === 1 ? "#3fb950" : "#f85149") +
-        ' <span class="mini">n=' + row.semanticScored +
+      ? '<div class="metric">' + healthBar(row.semanticRate, 1, row.semanticRate === 1 ? "#3fb950" : "#f85149") + "</div>" +
+        '<span class="mini">n=' + row.semanticScored +
         (row.semanticUnknown ? " · 未知 " + row.semanticUnknown : "") + "</span>"
       : '<span class="muted">—</span>';
     html +=
