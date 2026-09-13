@@ -9,12 +9,12 @@ import { scoreArtifact } from "../eval/scorer.js";
 import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
 const directArm: Arm = { name: "direct", systemPrompt: "test", tools: [] };
-const editorArm: Arm = {
-  name: "editor",
+const astEditArm: Arm = {
+  name: "ast-edit",
   systemPrompt: "test",
   tools: ["lisp_editor"],
 };
-const sedawkArm: Arm = { name: "sedawk", systemPrompt: "test", tools: ["shell"] };
+const textEditArm: Arm = { name: "text-edit", systemPrompt: "test", tools: ["shell"] };
 const diffArm: Arm = { name: "diff", systemPrompt: "test", tools: [], diff: true };
 
 const task: Task = {
@@ -60,14 +60,14 @@ test("runOne: direct arm's broken artifact is a paren mismatch", async () => {
   assert.equal(result.success, false);
 });
 
-test("runOne: sedawk arm scores the edited file", async () => {
-  const result = await runOne(new MockDriver(), sedawkArm, task);
+test("runOne: text-edit arm scores the edited file", async () => {
+  const result = await runOne(new MockDriver(), textEditArm, task);
   assert.equal(result.success, true);
   assert.ok(result.steps >= 1);
 });
 
 test("runOne: tool arms cannot bypass the tool with typed output", async () => {
-  const result = await runOne(new MockDriver(), editorArm, task);
+  const result = await runOne(new MockDriver(), astEditArm, task);
   assert.equal(result.finalArtifact.trim(), "_");
   assert.notEqual(result.finalArtifact.trim(), task.expected);
 });
@@ -308,7 +308,7 @@ test("openai driver: exhausting maxSteps returns a result instead of throwing", 
     });
     let toolExecs = 0;
     const result = await driver.run({
-      arm: editorArm,
+      arm: astEditArm,
       task,
       tools: [{ name: "lisp_editor", description: "test", parameters: {} }],
       ctx: {
@@ -344,9 +344,9 @@ test("parseArgs: rejects a non-positive or non-numeric --timeout", () => {
 });
 
 test("parseArgs: repeated --arm accumulates", () => {
-  assert.deepEqual(parseArgs(["--arm", "direct", "--arm", "editor"]).arms, [
+  assert.deepEqual(parseArgs(["--arm", "direct", "--arm", "ast-edit"]).arms, [
     "direct",
-    "editor",
+    "ast-edit",
   ]);
 });
 
@@ -422,12 +422,12 @@ test("summarize: aggregates rates per arm", () => {
   });
 
   const summaries = summarize([
-    make("editor", true, true, false),
-    make("editor", false, false, true),
+    make("ast-edit", true, true, false),
+    make("ast-edit", false, false, true),
     make("direct", true, true, false),
   ]);
 
-  const editor = summaries.find((summary) => summary.arm === "editor")!;
+  const editor = summaries.find((summary) => summary.arm === "ast-edit")!;
   assert.equal(editor.runs, 2);
   assert.equal(editor.successRate, 0.5);
   assert.equal(editor.parenMismatchRate, 0.5);

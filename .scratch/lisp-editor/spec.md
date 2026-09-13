@@ -170,8 +170,8 @@ The command is exposed as the `lisp-editor` bin.
 - tasks: a fixed set of nested edit tasks, each with input source, instruction,
   expected result, and two annotations: `locate` (`explicit` | `described`) and
   `construct` (`atom` | `wrap` | `build` | `copy` | `multi`).
-- arms: `direct` (agent outputs whole-file text), `editor` (agent drives
-  `lisp-editor`), `sedawk` (agent uses shell/`sed`/`awk`).
+- arms: `direct` (agent outputs whole-file text), `ast-edit` (agent drives
+  `lisp-editor`), `text-edit` (agent uses shell/`sed`/`awk`).
 - runner: for each `(task × arm)`, runs the agent with the arm's
   prompt/tools, captures the transcript and final artifact, and scores it.
 - results: per-run JSON plus a summary table.
