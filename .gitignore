@@ -1,5 +1,5 @@
 node_modules/
 dist/
 eval/results/
-eval/viewer.html
+eval/report.html
 package-lock.json

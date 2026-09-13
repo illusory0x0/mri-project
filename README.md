@@ -51,6 +51,5 @@ Run `node dist/eval/run.js -h` for the full flag list.
 ### Read the results
 
 ```sh
-pnpm run report    # terminal table of success@1, steps, tokens
-pnpm run viewer    # writes eval/viewer.html to browse runs interactively
+pnpm run report    # writes eval/report.html to browse runs interactively
 ```

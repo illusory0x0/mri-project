@@ -13,8 +13,7 @@
     "typecheck": "tsc --noEmit",
     "test": "pnpm run build && node --test dist/test/*.test.js",
     "eval": "pnpm run build && node dist/eval/run.js",
-    "report": "pnpm run build && node dist/eval/report.js",
-    "viewer": "pnpm run build && node dist/eval/viewer.js"
+    "report": "pnpm run build && node dist/eval/report.js"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
