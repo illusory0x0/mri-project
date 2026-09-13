@@ -1,4 +1,4 @@
-pnpm run eval --   \
+pnpm run eval \
   --driver openai \
   --base-url $OPENAI_BASE_URL \
   --api-key $OPENAI_API_KEY \
