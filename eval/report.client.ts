@@ -1,4 +1,5 @@
 import { headlineNote } from "./report.notes.js";
+import { modalVerdict } from "./verdict.js";
 import type {
   Arm,
   ArmSummary,
@@ -125,23 +126,6 @@ function scoreCell(value: number, total: number): string {
   return '<span class="score ' + cls + '">' + numerator + "/" + total + "</span>";
 }
 
-function agreementOf(runs: RunResult[]): { ok: boolean; n: number; total: number } {
-  const counts: Record<string, number> = {};
-  runs.forEach(function (r) {
-    const sig = [r.parsed, r.structural, r.success, r.semantic].join("|");
-    counts[sig] = (counts[sig] || 0) + 1;
-  });
-  let modal = "";
-  let best = -1;
-  Object.keys(counts).forEach(function (sig) {
-    if (counts[sig] > best) {
-      best = counts[sig];
-      modal = sig;
-    }
-  });
-  return { ok: modal.split("|")[2] === "true", n: best, total: runs.length };
-}
-
 function renderStats(): void {
   const bits: string[] = [];
   bits.push(DATA.runs.length + " 次运行");
@@ -182,17 +166,23 @@ function summaryTable(rows: ArmSummary[]): string {
 }
 
 function renderSummary(): void {
-  let html =
-    summaryTable(DATA.summary) + headlineNote(DATA.bracketDanger.taskIds.length);
   const sets = [...new Set(DATA.perSet.map((row) => row.set))].sort();
-  sets.forEach(function (set) {
-    const rows = DATA.perSet.filter((row) => row.set === set);
-    html +=
-      '<h3 style="margin-top:18px">任务集 · ' +
-      esc(set) +
-      "</h3>" +
-      summaryTable(rows);
-  });
+  let html = "";
+  if (sets.length <= 1) {
+    html += summaryTable(DATA.summary);
+  } else {
+    sets.forEach(function (set) {
+      const rows = DATA.perSet.filter((row) => row.set === set);
+      html +=
+        '<h3' +
+        (html ? ' style="margin-top:18px"' : "") +
+        ">任务集 · " +
+        esc(set) +
+        "</h3>" +
+        summaryTable(rows);
+    });
+  }
+  html += headlineNote(DATA.bracketDanger.taskIds.length);
   const repeated = DATA.runs.some(function (r) {
     return (r.repeat ?? 1) > 1;
   });
@@ -318,7 +308,7 @@ function renderMatrix(): void {
         return;
       }
       const r = cellRuns[0];
-      const agg = cellRuns.length > 1 ? agreementOf(cellRuns) : null;
+      const agg = cellRuns.length > 1 ? modalVerdict(cellRuns) : null;
       const ok = agg ? agg.ok : r.success;
       const agreement = agg
         ? ' <span class="ratio">' + agg.n + "/" + agg.total + "</span>"

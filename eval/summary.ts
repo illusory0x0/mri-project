@@ -3,13 +3,8 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import {
-  loadJsonDir,
-  loadTasks,
-  summarizeBracketDanger,
-  summarizeBySet,
-  summarizeHeadline,
-} from "./runner.js";
+import { loadJsonDir, loadTasks, summarizeBracketDanger, summarizeBySet, summarizeHeadline } from "./runner.js";
+import { modalVerdict } from "./verdict.js";
 import {
   ArmName,
   BatchingStat,
@@ -126,6 +121,11 @@ async function hashTaskTree(
   return { taskSetHash: sha256(parts), taskSets };
 }
 
+async function tasksRoot(dir: string): Promise<string> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  return entries.some((entry) => entry.isDirectory()) ? dir : path.dirname(dir);
+}
+
 export async function collectProvenance(
   runs: RunResult[],
   dirs: { arms: string; tasks: string }
@@ -135,7 +135,7 @@ export async function collectProvenance(
     ...new Set(runs.map((run) => String(run.temperature ?? "default"))),
   ];
   const drivers = [...new Set(runs.map((run) => run.driver))];
-  const tree = await hashTaskTree(dirs.tasks);
+  const tree = await hashTaskTree(await tasksRoot(dirs.tasks));
   return {
     generatedAt: new Date().toISOString(),
     gitCommit: gitCommit(),
@@ -224,43 +224,39 @@ function summarizeOperation(
   return { arm, set, operation, ...summarizeRuns(arm, results) };
 }
 
-function verdictSignature(run: RunResult): string {
-  return [run.parsed, run.structural, run.success, run.semantic].join("|");
-}
-
 export function computeStability(
   runs: RunResult[],
   tasks: Task[]
 ): StabilitySummary[] {
   const setOf = new Map(tasks.map((task) => [task.id, task.set ?? "unknown"]));
-  const groups = new Map<string, RunResult[]>();
+  const groups = new Map<
+    string,
+    { taskId: string; arm: ArmName; runs: RunResult[] }
+  >();
   for (const run of runs) {
-    const key = `${run.taskId}|${run.arm}`;
-    const list = groups.get(key);
-    if (list) list.push(run);
-    else groups.set(key, [run]);
+    const key = `${run.taskId}\u0000${run.arm}\u0000${run.driver}`;
+    const entry = groups.get(key);
+    if (entry) entry.runs.push(run);
+    else
+      groups.set(key, {
+        taskId: run.taskId,
+        arm: run.arm,
+        runs: [run],
+      });
   }
   const acc = new Map<
     string,
     { set: string; arm: ArmName; total: number; count: number }
   >();
-  for (const [key, group] of groups) {
-    const separator = key.lastIndexOf("|");
-    const taskId = key.slice(0, separator);
-    const arm = key.slice(separator + 1) as ArmName;
-    const set = setOf.get(taskId) ?? "unknown";
-    const counts = new Map<string, number>();
-    for (const run of group) {
-      const signature = verdictSignature(run);
-      counts.set(signature, (counts.get(signature) ?? 0) + 1);
-    }
-    const modal = Math.max(...counts.values());
-    const agreement = group.length === 0 ? 0 : modal / group.length;
-    const groupKey = `${set}|${arm}`;
-    const entry = acc.get(groupKey) ?? { set, arm, total: 0, count: 0 };
-    entry.total += agreement;
-    entry.count += 1;
-    acc.set(groupKey, entry);
+  for (const entry of groups.values()) {
+    const set = setOf.get(entry.taskId) ?? "unknown";
+    const modal = modalVerdict(entry.runs);
+    const agreement = modal.total === 0 ? 0 : modal.n / modal.total;
+    const groupKey = `${set}\u0000${entry.arm}`;
+    const agg = acc.get(groupKey) ?? { set, arm: entry.arm, total: 0, count: 0 };
+    agg.total += agreement;
+    agg.count += 1;
+    acc.set(groupKey, agg);
   }
   return [...acc.values()]
     .map((entry) => ({

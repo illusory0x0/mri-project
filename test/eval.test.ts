@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { existsSync } from "node:fs";
+import { existsSync, mkdtempSync, readdirSync, rmSync } from "node:fs";
+import os from "node:os";
 import path from "node:path";
 import { test } from "node:test";
 import { computeTargetDepth } from "../eval/depth.js";
@@ -1104,4 +1105,39 @@ test("stability: agreement is the modal verdict share", () => {
   )!;
   assert.equal(row.tasks, 1);
   assert.ok(Math.abs(row.meanAgreement - 2 / 3) < 1e-9);
+});
+
+test("run.ts: --repeats writes one artifact per repeat", async () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "lisp-eval-repeat-"));
+  try {
+    const result = await runProcess(
+      process.execPath,
+      [
+        "dist/eval/run.js",
+        "--driver",
+        "mock",
+        "--arm",
+        "direct",
+        "--repeats",
+        "2",
+        "--task",
+        "t01-increment",
+        "--tasks",
+        "eval/tasks/basic",
+        "--out",
+        dir,
+      ],
+      { cwd: process.cwd() }
+    );
+    assert.equal(result.code, 0, result.stderr);
+    const files = readdirSync(dir)
+      .filter((name) => name.startsWith("direct-t01-increment"))
+      .sort();
+    assert.deepEqual(files, [
+      "direct-t01-increment-r1.json",
+      "direct-t01-increment-r2.json",
+    ]);
+  } finally {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });

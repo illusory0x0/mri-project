@@ -230,7 +230,6 @@ async function main(): Promise<void> {
     return withDepth({
       id,
       locate: "explicit",
-      construct: "atom",
       instruction: "",
       input: "",
       expected: "",
