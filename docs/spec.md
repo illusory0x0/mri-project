@@ -302,6 +302,18 @@ integration tests establish the pattern future work should follow.
   calls, commands per turn); the snapshot is the durable record and raw
   `eval/results/` may be pruned. See
   `docs/adr/0010-commit-compact-eval-summaries.md`.
+- **Batched edits in one turn cut `ast-edit` cost.** The `ast-edit` prompt tells
+  the model it may put independent `lisp_editor` edits in a single assistant turn
+  while keeping path-dependent edits (after an insert, delete, or list replace)
+  separate. On kimi-k2.7-code-highspeed at temperature 1, `ast-edit` total tokens
+  over all 21 tasks fell from 337k to 272k (≈19%), concentrated in `build`
+  (215k → 159k, ≈26%) and `wrap` (41k → 33k, ≈20%); commands per turn rose from
+  1.07 to 1.67. An earlier revision without the hole-targeting hint saved more
+  tokens (263k) but regressed one `build` task by replacing a parameter list with
+  an atom; the hint restores full success. These are single-sample runs at
+  temperature 1 and the `multi` saving is not robust, so the figures are
+  directional; the provenance is in the committed snapshots under
+  `eval/summaries/` (see ADR 0010).
 - **Future direction: a custom benchmark language.** A more stable benchmark
   would replace Racket with a purpose-built, Lisp-style ML language whose syntax
   and evaluation are fully specified, so scoring no longer depends on Racket's

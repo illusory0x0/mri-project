@@ -31,7 +31,9 @@ The `eval/` harness runs a model against a set of **tasks** using several
   and excluded from the headline summary).
 - **Arms** live in `eval/arms/*.json`:
   - `direct` — reply with the whole program.
-  - `ast-edit` — use the `lisp_editor` structural tool.
+  - `ast-edit` — use the `lisp_editor` structural tool. Its prompt encourages
+    independent edits to be batched into one turn; on the recorded run that cut
+    total tokens ≈19% versus one-edit-per-turn (≈26% on `build` tasks).
   - `text-edit` — use a `shell` tool (bash/sed/awk).
   - `diff` — reply with a unified diff that the harness applies.
 - Results are written to `eval/results/` (git-ignored), one JSON file per run
