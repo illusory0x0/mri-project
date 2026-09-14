@@ -18,11 +18,14 @@ justified by the current threat model.
 
 **Decision.** The boundary is an explicit, accepted risk backed by a
 detection-only guard. When the scorer evaluates a candidate, it installs a base
-namespace in which the obvious filesystem, process, network, and environment
-bindings (`open-input-file`, `open-output-file`, `call-with-*`, `delete-file`,
+namespace and `require`s the full `racket` language into it, so real Racket
+programs (using `match`, `for/*`, `delay`, `string-join`, …) evaluate; the
+obvious filesystem, process, network, and environment bindings
+(`open-input-file`, `open-output-file`, `call-with-*`, `delete-file`,
 `make-directory`, `directory-list`, `system`, `subprocess`, `tcp-*`, `udp-*`,
-`getenv`, `putenv`, `dynamic-require`, …) are replaced by procedures that raise a
-marked error (`eval/score.rkt`).
+`getenv`, `putenv`, `dynamic-require`, …) are then replaced by procedures that
+raise a marked error (`eval/score.rkt`). The guards are installed *after* the
+language, so they shadow the bindings `racket` provides.
 
 A flagged run is not scored as an ordinary verdict: the scorer reports
 `ioViolation: true`, the run artifact records it, and the report shows it in the

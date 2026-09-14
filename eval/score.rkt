@@ -72,11 +72,13 @@
 (define (eval-side datums probe)
   (define program
     (bounded
-     (lambda ()
-       (define namespace (make-base-namespace))
-       (install-io-guards! namespace)
-       (for-each (lambda (datum) (eval datum namespace)) datums)
-       namespace)))
+      (lambda ()
+        (define namespace (make-base-namespace))
+        (parameterize ([current-namespace namespace])
+          (eval '(require racket)))
+        (install-io-guards! namespace)
+        (for-each (lambda (datum) (eval datum namespace)) datums)
+        namespace)))
   (cond
     [(eq? (car program) 'ok)
      (define probe-result (and probe (bounded (lambda () (eval probe (cdr program))))))
