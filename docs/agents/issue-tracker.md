@@ -22,3 +22,15 @@ Create a new file under `.scratch/<feature-slug>/` (creating the directory if ne
 
 Read the file at the referenced path. The user will normally pass the path or the
 issue number directly.
+
+## When a feature lands
+
+`.scratch/` is a workbench, not an archive. Once a feature is implemented:
+
+- Fold its `spec.md` into the canonical spec set under `docs/spec/` — each part
+  into the right document, corrected to match what actually shipped, not a
+  verbatim copy — and delete the scratch spec.
+- Delete its completed tickets. A ticket that is `done` in the workbench is
+  stale the moment it lands; the durable record is the code, `docs/spec/`, and
+  the ADRs.
+- Leave nothing in `.scratch/` that a reader would have to triage again.

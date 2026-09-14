@@ -953,7 +953,7 @@ test("summary: corpus tasks group under their operation, not construct", () => {
     model: "mock",
     temperature: "default",
     driver: "mock",
-    taskSets: [{ name: "tasks-leetcode", hash: "h" }],
+    taskSets: [{ name: "leetcode", hash: "h" }],
     armHash: "arm",
     vocabHash: "vocab",
     taskSetHash: "tasks",
@@ -967,7 +967,7 @@ test("summary: corpus tasks group under their operation, not construct", () => {
   assert.equal(operation.runs, 1);
   assert.equal(snapshot.runs[0].construct, null);
   assert.equal(snapshot.runs[0].operation, "move-subtree");
-  assert.equal(snapshot.provenance.taskSets[0].name, "tasks-leetcode");
+  assert.equal(snapshot.provenance.taskSets[0].name, "leetcode");
 });
 
 test("provenance: records every task set with a content hash", async () => {
