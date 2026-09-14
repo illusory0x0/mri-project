@@ -28,7 +28,10 @@ The `eval/` harness runs a model against a set of **tasks** using several
   (`atom` / `wrap` / `build` / `copy` / `multi`). A task may also carry a
   `probe` (an expression scored semantically against both programs) and a
   `bracketDanger` flag (its runs are reported in a separate reliability cell
-  and excluded from the headline summary).
+  and excluded from the headline summary). `eval/tasks-orthogonal/` is a 16-task
+  subset that crosses `locate` and `construct` (each pair shares the program and
+  differs only in the instruction) so a per-`construct` cost is not confounded
+  by `locate`; run it with `--tasks eval/tasks-orthogonal`.
 - **Arms** live in `eval/arms/*.json`:
   - `direct` — reply with the whole program.
   - `ast-edit` — use the `lisp_editor` structural tool. Its prompt encourages
