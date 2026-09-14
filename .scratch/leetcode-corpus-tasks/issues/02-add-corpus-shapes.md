@@ -7,18 +7,18 @@ from generic lists. New shapes: `letrec`, `and`, `or`, `when`, `unless`,
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `expandShape` supports `letrec` → `(letrec ((_name _value)) _body)`.
-- [ ] `expandShape` supports `and` / `or` → `(and _arg1 _arg2)` /
+- [x] `expandShape` supports `letrec` → `(letrec ((_name _value)) _body)`.
+- [x] `expandShape` supports `and` / `or` → `(and _arg1 _arg2)` /
       `(or _arg1 _arg2)`.
-- [ ] `expandShape` supports `when` / `unless` → `(when _cond _body)` /
+- [x] `expandShape` supports `when` / `unless` → `(when _cond _body)` /
       `(unless _cond _body)`.
-- [ ] `expandShape` supports `begin` → `(begin _body1 _body2)`.
-- [ ] `expandShape` supports `let-loop` → `(let _loop ((_name _value)) _body)`,
+- [x] `expandShape` supports `begin` → `(begin _body1 _body2)`.
+- [x] `expandShape` supports `let-loop` → `(let _loop ((_name _value)) _body)`,
       the named `let`.
-- [ ] The unknown-shape error lists every new shape.
-- [ ] `match` and `for/*` remain constructible only as ordinary lists (no
+- [x] The unknown-shape error lists every new shape.
+- [x] `match` and `for/*` remain constructible only as ordinary lists (no
       shape), and this is documented in the `lisp_editor` tool description.
-- [ ] CLI-level tests assert each new shape's expansion.
-- [ ] `just typecheck` and `just test` pass.
+- [x] CLI-level tests assert each new shape's expansion.
+- [x] `just typecheck` and `just test` pass.

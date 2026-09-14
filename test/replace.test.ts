@@ -34,6 +34,22 @@ test("replace: every v2 shape produces its skeleton", () => {
   assert.equal(ok("(a)", ["replace", "list", "--out", "[0]"]), "(_item1 _item2)\n");
 });
 
+test("replace: every corpus shape produces its skeleton", () => {
+  assert.equal(
+    ok("(a)", ["replace", "letrec", "--out", "[0]"]),
+    "(letrec ((_name _value)) _body)\n"
+  );
+  assert.equal(
+    ok("(a)", ["replace", "let-loop", "--out", "[0]"]),
+    "(let _loop ((_name _value)) _body)\n"
+  );
+  assert.equal(ok("(a)", ["replace", "and", "--out", "[0]"]), "(and _arg1 _arg2)\n");
+  assert.equal(ok("(a)", ["replace", "or", "--out", "[0]"]), "(or _arg1 _arg2)\n");
+  assert.equal(ok("(a)", ["replace", "when", "--out", "[0]"]), "(when _cond _body)\n");
+  assert.equal(ok("(a)", ["replace", "unless", "--out", "[0]"]), "(unless _cond _body)\n");
+  assert.equal(ok("(a)", ["replace", "begin", "--out", "[0]"]), "(begin _body1 _body2)\n");
+});
+
 test("replace: apply:<n> builds an n-argument application skeleton", () => {
   assert.equal(
     ok("(a)", ["replace", "apply:2", "--out", "[0]"]),
