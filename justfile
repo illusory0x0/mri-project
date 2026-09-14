@@ -29,6 +29,10 @@ eval *args: build
 report: build
 	node dist/eval/report.js
 
+# Build, then write a compact, committable eval summary snapshot to eval/summaries/.
+summary *args: build
+	node dist/eval/summary.js {{args}}
+
 # Count lines of code, skipping build output, deps, and scratch/generated files.
 count-lines:
 	cloc . --exclude-dir=node_modules,dist,.git,.scratch,coverage,eval/results

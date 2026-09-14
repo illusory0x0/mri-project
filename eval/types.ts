@@ -137,3 +137,61 @@ export interface ReportData {
   summary: ArmSummary[];
   bracketDanger: BracketDangerCell;
 }
+
+export interface SummaryProvenance {
+  generatedAt: string;
+  gitCommit: string;
+  gitDirty: boolean;
+  model: string;
+  temperature: string;
+  driver: string;
+  armHash: string;
+  vocabHash: string;
+  taskSetHash: string;
+  scorerHash: string;
+}
+
+export interface ConstructSummary {
+  arm: ArmName;
+  construct: ConstructKind;
+  runs: number;
+  successRate: number;
+  structuralRate: number;
+  semanticRate: number;
+  semanticScored: number;
+  meanSteps: number;
+  meanTokens: number;
+  totalTokens: number;
+}
+
+export interface BatchingStat {
+  arm: ArmName;
+  assistantTurns: number;
+  toolTurns: number;
+  toolCalls: number;
+  commandsPerTurn: number;
+}
+
+export interface SummaryRunRow {
+  taskId: string;
+  arm: ArmName;
+  construct: ConstructKind;
+  locate: LocateDifficulty;
+  success: boolean;
+  structural: boolean;
+  semantic: SemanticVerdict | null;
+  parenMismatch: boolean;
+  hunkFailure: boolean;
+  ioViolation: boolean;
+  steps: number;
+  tokens: number;
+}
+
+export interface SummarySnapshot {
+  provenance: SummaryProvenance;
+  headline: ArmSummary[];
+  bracketDanger: BracketDangerCell;
+  perConstruct: ConstructSummary[];
+  batching: BatchingStat[];
+  runs: SummaryRunRow[];
+}

@@ -294,11 +294,14 @@ integration tests establish the pattern future work should follow.
   weighed against the one-node-per-call model and rejected: v2 keeps the model
   and documents the copy-before-overwrite order instead (see the shape
   catalogue).
-- **Deferred: cost by construct.** The summary reports a single step/token figure
-  per arm, which averages `atom` tasks (≈2 steps) with `build` tasks (≈12 steps)
-  and hides where the vocabulary is expensive. Splitting the cost summary by
-  `construct` is deliberately deferred to a future decision; the evidence is
-  recorded in the shape-vocabulary ticket above.
+- **Cost by construct is reported by the summary snapshots.** The report's arm
+  table still shows a single step/token figure per arm, which averages `atom`
+  tasks (≈2 steps) with `build` tasks (≈12 steps). `just summary` therefore
+  writes a per-`construct` cost split (per arm) into the committed snapshot under
+  `eval/summaries/`, alongside batching diagnostics (assistant turns, tool
+  calls, commands per turn); the snapshot is the durable record and raw
+  `eval/results/` may be pruned. See
+  `docs/adr/0010-commit-compact-eval-summaries.md`.
 - **Future direction: a custom benchmark language.** A more stable benchmark
   would replace Racket with a purpose-built, Lisp-style ML language whose syntax
   and evaluation are fully specified, so scoring no longer depends on Racket's

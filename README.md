@@ -34,10 +34,16 @@ The `eval/` harness runs a model against a set of **tasks** using several
   - `ast-edit` — use the `lisp_editor` structural tool.
   - `text-edit` — use a `shell` tool (bash/sed/awk).
   - `diff` — reply with a unified diff that the harness applies.
-- Results are written to `eval/results/`, one JSON file per run plus
-  `summary.json`. Each run records the driver that produced it, the model and
-  temperature actually used, its structural/semantic verdicts, and the task's
-  target depth.
+- Results are written to `eval/results/` (git-ignored), one JSON file per run
+  plus `summary.json`. Each run records the driver that produced it, the model
+  and temperature actually used, its structural/semantic verdicts, and the
+  task's target depth.
+- `just summary` derives a compact, committable snapshot under
+  `eval/summaries/`: provenance (git commit, model, and content hashes of arms,
+  vocabulary, task set, and scorer), per-arm and per-`construct` aggregates, and
+  batching diagnostics, with no transcripts. The snapshot is the durable record;
+  raw results can be pruned. See
+  `docs/adr/0010-commit-compact-eval-summaries.md`.
 
 ### Run against a model
 
@@ -78,4 +84,5 @@ Run `node dist/eval/run.js -h` for the full flag list.
 
 ```sh
 just report        # writes eval/report.html to browse runs interactively
+just summary       # writes a compact snapshot to eval/summaries/ and commits it
 ```

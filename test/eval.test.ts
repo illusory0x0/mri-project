@@ -9,6 +9,7 @@ import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
 import { loadTasks, mapLimit, runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
 import { headlineNote } from "../eval/report.notes.js";
 import { scoreArtifact } from "../eval/scorer.js";
+import { buildSnapshot } from "../eval/summary.js";
 import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
 const directArm: Arm = { name: "direct", systemPrompt: "test", tools: [] };
@@ -776,6 +777,95 @@ test("summarize: a hunk-application failure is not a parse error", () => {
   assert.equal(summary.hunkFailureRate, 0.25);
   assert.equal(summary.parseErrorRate, 0.25);
   assert.equal(summary.parenMismatchRate, 0);
+});
+
+test("summary: builds per-construct totals, batching rate, and hides danger tasks", () => {
+  const wrapTask: Task = {
+    id: "t-wrap",
+    locate: "described",
+    construct: "wrap",
+    instruction: "",
+    input: "",
+    expected: "",
+  };
+  const buildTask: Task = {
+    id: "t-build",
+    locate: "explicit",
+    construct: "build",
+    instruction: "",
+    input: "",
+    expected: "",
+    bracketDanger: true,
+  };
+  const transcript = [
+    { role: "assistant", tool_calls: [{ id: "1" }, { id: "2" }] },
+    { role: "tool", tool_call_id: "1", content: "{}" },
+    { role: "tool", tool_call_id: "2", content: "{}" },
+    { role: "assistant", tool_calls: [{ id: "3" }] },
+    { role: "assistant", content: "done" },
+  ];
+  const base: RunResult = {
+    taskId: "t-wrap",
+    arm: "ast-edit",
+    driver: "openai",
+    model: "m",
+    temperature: 1,
+    parsed: true,
+    parenMismatch: false,
+    hunkFailure: false,
+    ioViolation: false,
+    evaluates: true,
+    success: true,
+    structural: true,
+    semantic: null,
+    depth: 0,
+    parseError: null,
+    steps: 3,
+    tokens: 100,
+    finalArtifact: "",
+    transcript,
+  };
+  const runs = [
+    { ...base, taskId: "t-wrap" },
+    { ...base, taskId: "t-build", tokens: 300, steps: 5 },
+  ];
+  const provenance = {
+    generatedAt: "2026-09-14T00:00:00.000Z",
+    gitCommit: "abc",
+    gitDirty: false,
+    model: "m",
+    temperature: "1",
+    driver: "openai",
+    armHash: "arm",
+    vocabHash: "vocab",
+    taskSetHash: "tasks",
+    scorerHash: "scorer",
+  };
+
+  const snapshot = buildSnapshot(runs, [wrapTask, buildTask], provenance);
+
+  const wrap = snapshot.perConstruct.find((item) => item.construct === "wrap")!;
+  assert.equal(wrap.runs, 1);
+  assert.equal(wrap.totalTokens, 100);
+  const build = snapshot.perConstruct.find(
+    (item) => item.construct === "build"
+  )!;
+  assert.equal(build.arm, "ast-edit");
+  assert.equal(build.runs, 1);
+  assert.equal(build.totalTokens, 300);
+  assert.equal(build.meanTokens, 300);
+
+  const batching = snapshot.batching.find((stat) => stat.arm === "ast-edit")!;
+  assert.equal(batching.assistantTurns, 6);
+  assert.equal(batching.toolTurns, 4);
+  assert.equal(batching.toolCalls, 6);
+  assert.equal(batching.commandsPerTurn, 1.5);
+
+  const headline = snapshot.headline.find((item) => item.arm === "ast-edit")!;
+  assert.equal(headline.runs, 1);
+  assert.deepEqual(snapshot.bracketDanger.taskIds, ["t-build"]);
+  assert.equal(snapshot.runs.length, 2);
+  assert.equal(snapshot.provenance.armHash, "arm");
 });
 
 test("headline summary excludes exactly the bracket-danger task list", () => {
