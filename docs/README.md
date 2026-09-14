@@ -30,3 +30,4 @@ workbench), and `research/` (external notes).
 ## Sub-index
 
 - [spec/README.md](spec/README.md) — the product spec index.
+- [adr/README.md](adr/README.md) — the decision index.
