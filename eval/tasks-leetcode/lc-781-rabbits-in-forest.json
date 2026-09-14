@@ -1,0 +1,14 @@
+{
+  "id": "lc-781-rabbits-in-forest",
+  "locate": "explicit",
+  "operation": "delete-node",
+  "instruction": "In num-rabbits the final multiplication has a spurious factor 2. Remove it.",
+  "input": "\n(define (num-rabbits answers)\n  (define table (make-hash))\n  (for-each\n    (λ (x) (hash-update! table x add1 0))\n    answers)\n  (for/sum ([(ans cnt) (in-hash table)])\n    (* (+ ans 1) (ceiling (/ cnt (+ ans 1))) 2)))",
+  "expected": "\n(define (num-rabbits answers)\n  (define table (make-hash))\n  (for-each\n    (λ (x) (hash-update! table x add1 0))\n    answers)\n  (for/sum ([(ans cnt) (in-hash table)])\n    (* (+ ans 1) (ceiling (/ cnt (+ ans 1))))))",
+  "probe": "(num-rabbits '(1 1 2))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "781-rabbits-in-forest.rkt",
+    "commit": "7aed964"
+  }
+}

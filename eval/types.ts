@@ -2,17 +2,32 @@ export type LocateDifficulty = "explicit" | "described";
 
 export type ConstructKind = "atom" | "wrap" | "build" | "copy" | "multi";
 
+export type OperationKind =
+  | "replace-node"
+  | "insert-node"
+  | "delete-node"
+  | "wrap-node"
+  | "move-subtree";
+
+export interface TaskSource {
+  repo: string;
+  file: string;
+  commit: string;
+}
+
 export type SemanticVerdict = "equal" | "different" | "unknown";
 
 export interface Task {
   id: string;
   locate: LocateDifficulty;
-  construct: ConstructKind;
+  construct?: ConstructKind;
+  operation?: OperationKind;
   instruction: string;
   input: string;
   expected: string;
   probe?: string;
   bracketDanger?: boolean;
+  source?: TaskSource;
 }
 
 export type LoadedTask = Task & { depth: number };

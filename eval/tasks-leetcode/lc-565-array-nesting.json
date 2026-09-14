@@ -1,0 +1,14 @@
+{
+  "id": "lc-565-array-nesting",
+  "locate": "explicit",
+  "operation": "replace-node",
+  "instruction": "In array-nesting the inner loop starts its length at 1; start it at 0 instead.",
+  "input": "\n(define (array-nesting nums)\n  (define v (list->vector nums))\n  (define visited (mutable-seteq))\n\n  (for/fold ([max-len 0])\n            ([i (in-range (vector-length v))]\n             #:when (not (set-member? visited i)))\n    (let loop ([ni i] [len 0])\n      (set-add! visited ni)\n      (define next (vector-ref v ni))\n      (if (= next i)\n          (max len max-len)\n          (loop next (add1 len))))))",
+  "expected": "\n(define (array-nesting nums)\n  (define v (list->vector nums))\n  (define visited (mutable-seteq))\n\n  (for/fold ([max-len 0])\n            ([i (in-range (vector-length v))]\n             #:when (not (set-member? visited i)))\n    (let loop ([ni i] [len 1])\n      (set-add! visited ni)\n      (define next (vector-ref v ni))\n      (if (= next i)\n          (max len max-len)\n          (loop next (add1 len))))))",
+  "probe": "(array-nesting '(5 4 0 3 1 6 2))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "565-array-nesting.rkt",
+    "commit": "7aed964"
+  }
+}

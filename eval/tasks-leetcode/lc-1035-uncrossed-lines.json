@@ -1,0 +1,14 @@
+{
+  "id": "lc-1035-uncrossed-lines",
+  "locate": "explicit",
+  "operation": "replace-node",
+  "instruction": "In max-uncrossed-lines the match test is negated. Compare n1 and n2 for equality.",
+  "input": "\n(define (scanl f i l)\n  (let loop ([acc i] [l l])\n    (if (null? l)\n      (list acc)\n      (cons acc (loop (f acc (car l)) (cdr l))))))\n\n(define (max-uncrossed-lines nums1 nums2)\n  (for/fold ([last-line (make-list (add1 (length nums2)) 0)]\n             #:result (last last-line))\n            ([n1 (in-list nums1)])\n    (scanl max 0\n      (for/list ([n2 (in-list nums2)]\n                 [d1 (in-list last-line)]\n                 [d2 (in-list (cdr last-line))])\n        (if (not (= n1 n2)) (add1 d1) d2)))))",
+  "expected": "\n(define (scanl f i l)\n  (let loop ([acc i] [l l])\n    (if (null? l)\n      (list acc)\n      (cons acc (loop (f acc (car l)) (cdr l))))))\n\n(define (max-uncrossed-lines nums1 nums2)\n  (for/fold ([last-line (make-list (add1 (length nums2)) 0)]\n             #:result (last last-line))\n            ([n1 (in-list nums1)])\n    (scanl max 0\n      (for/list ([n2 (in-list nums2)]\n                 [d1 (in-list last-line)]\n                 [d2 (in-list (cdr last-line))])\n        (if (= n1 n2) (add1 d1) d2)))))",
+  "probe": "(max-uncrossed-lines '(1 2 3) '(1 2 3))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "1035-uncrossed-lines.rkt",
+    "commit": "7aed964"
+  }
+}

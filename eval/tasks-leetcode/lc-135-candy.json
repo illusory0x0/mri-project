@@ -1,0 +1,14 @@
+{
+  "id": "lc-135-candy",
+  "locate": "described",
+  "operation": "replace-node",
+  "instruction": "In candy each child is given the minimum of its neighbours instead of the maximum. Use max.",
+  "input": "\n(define (candy ratings)\n  (define rat (list->vector ratings))\n  (define len (vector-length rat))\n  (define (rating i) (vector-ref rat i))\n  (define (left i)\n    (and (> i 0) (- i 1)))\n  (define (right i)\n    (and (< i (- len 1))\n         (+ i 1)))\n\n  (define (candy i)\n    (force (vector-ref candies i)))\n  (define (calc-candy r i)\n    (if (and i (> r (rating i)))\n        (+ 1 (candy i))\n        1))\n  (define candies\n    (for/vector ([i (in-range len)])\n      (delay\n        (let ([lk (left i)]\n              [rk (right i)]\n              [r (rating i)])\n          (min (calc-candy r lk)\n               (calc-candy r rk))))))\n  (for/sum ([x (in-vector candies)])\n    (force x)))",
+  "expected": "\n(define (candy ratings)\n  (define rat (list->vector ratings))\n  (define len (vector-length rat))\n  (define (rating i) (vector-ref rat i))\n  (define (left i)\n    (and (> i 0) (- i 1)))\n  (define (right i)\n    (and (< i (- len 1))\n         (+ i 1)))\n\n  (define (candy i)\n    (force (vector-ref candies i)))\n  (define (calc-candy r i)\n    (if (and i (> r (rating i)))\n        (+ 1 (candy i))\n        1))\n  (define candies\n    (for/vector ([i (in-range len)])\n      (delay\n        (let ([lk (left i)]\n              [rk (right i)]\n              [r (rating i)])\n          (max (calc-candy r lk)\n               (calc-candy r rk))))))\n  (for/sum ([x (in-vector candies)])\n    (force x)))",
+  "probe": "(candy '(1 0 2))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "135-candy.rkt",
+    "commit": "7aed964"
+  }
+}

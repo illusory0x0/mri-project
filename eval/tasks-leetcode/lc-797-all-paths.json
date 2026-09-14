@@ -1,0 +1,14 @@
+{
+  "id": "lc-797-all-paths",
+  "locate": "described",
+  "operation": "replace-node",
+  "instruction": "In all-paths-source-target the dead-end test looks for an empty successor list. Test for a non-empty one with pair? instead.",
+  "input": "\n(define (all-paths-source-target graph)\n  (define gv (list->vector graph))\n  (let search ([node 0])\n    (define succ (vector-ref gv node))\n    (cond [(= node (- (vector-length gv) 1))\n           (list (list node))]\n          [(pair? succ) '()]\n          [else\n           (for*/list ([s succ]\n                       [p (search s)])\n             (cons node p))])))",
+  "expected": "\n(define (all-paths-source-target graph)\n  (define gv (list->vector graph))\n  (let search ([node 0])\n    (define succ (vector-ref gv node))\n    (cond [(= node (- (vector-length gv) 1))\n           (list (list node))]\n          [(null? succ) '()]\n          [else\n           (for*/list ([s succ]\n                       [p (search s)])\n             (cons node p))])))",
+  "probe": "(all-paths-source-target '((1 2) (3) (3) ()))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "797-all-paths-from-source-to-target.rkt",
+    "commit": "7aed964"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "lc-43-multiply-strings",
+  "locate": "described",
+  "operation": "replace-node",
+  "instruction": "In multiply each digit pair is added instead of multiplied. Multiply x1 by x2 inside the vector-update! step.",
+  "input": "\n(define (char->digit c)\n  (- (char->integer c) 48))\n\n(define (digit->char d)\n  (integer->char (+ d 48)))\n\n(define (in-digits s)\n  (sequence-map char->digit (in-string s)))\n\n(define (drop-leading-zeroes lst)\n  (define l (dropf lst zero?))\n  (if (null? l) '(0) l))\n\n(define (vector-update! vec pos f)\n  (vector-set! vec pos\n    (f (vector-ref vec pos))))\n\n(define (multiply num1 num2)\n  (let* ([len (+ (string-length num1)\n                 (string-length num2)\n                 -1)]\n         [ds (make-vector len)])\n    (for* ([(x1 i1) (in-indexed (in-digits num1))]\n           [(x2 i2) (in-indexed (in-digits num2))])\n      (vector-update! ds (+ i1 i2) (curry * (+ x1 x2))))\n\n    (define result\n      (for/fold ([carry 0] [digits '()]\n                 #:result (drop-leading-zeroes\n                            (cons carry digits)))\n                ([x (in-vector ds (sub1 len) -1 -1)])\n        (define-values (c d)\n          (quotient/remainder (+ carry x) 10))\n        (values c (cons d digits))))\n\n    (list->string (map digit->char result))))",
+  "expected": "\n(define (char->digit c)\n  (- (char->integer c) 48))\n\n(define (digit->char d)\n  (integer->char (+ d 48)))\n\n(define (in-digits s)\n  (sequence-map char->digit (in-string s)))\n\n(define (drop-leading-zeroes lst)\n  (define l (dropf lst zero?))\n  (if (null? l) '(0) l))\n\n(define (vector-update! vec pos f)\n  (vector-set! vec pos\n    (f (vector-ref vec pos))))\n\n(define (multiply num1 num2)\n  (let* ([len (+ (string-length num1)\n                 (string-length num2)\n                 -1)]\n         [ds (make-vector len)])\n    (for* ([(x1 i1) (in-indexed (in-digits num1))]\n           [(x2 i2) (in-indexed (in-digits num2))])\n      (vector-update! ds (+ i1 i2) (curry + (* x1 x2))))\n\n    (define result\n      (for/fold ([carry 0] [digits '()]\n                 #:result (drop-leading-zeroes\n                            (cons carry digits)))\n                ([x (in-vector ds (sub1 len) -1 -1)])\n        (define-values (c d)\n          (quotient/remainder (+ carry x) 10))\n        (values c (cons d digits))))\n\n    (list->string (map digit->char result))))",
+  "probe": "(multiply \"12\" \"12\")",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "43-multiply-strings.rkt",
+    "commit": "7aed964"
+  }
+}

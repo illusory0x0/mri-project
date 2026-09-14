@@ -1,0 +1,14 @@
+{
+  "id": "lc-645-set-mismatch",
+  "locate": "described",
+  "operation": "move-subtree",
+  "instruction": "In find-error-nums the two returned values are in the wrong order. Swap them so the duplicate comes first and the missing number second.",
+  "input": "\n(define (find-error-nums nums)\n  (let* ([n (length nums)]\n         [sum/all (/ (* n (+ n 1)) 2)]\n         [sum/nums (apply + nums)]\n         [sum/dedup (for/sum ([x (in-set (list->set nums))]) x)])\n    (list (- sum/all sum/dedup) (- sum/nums sum/dedup))))",
+  "expected": "\n(define (find-error-nums nums)\n  (let* ([n (length nums)]\n         [sum/all (/ (* n (+ n 1)) 2)]\n         [sum/nums (apply + nums)]\n         [sum/dedup (for/sum ([x (in-set (list->set nums))]) x)])\n    (list (- sum/nums sum/dedup) (- sum/all sum/dedup))))",
+  "probe": "(find-error-nums '(1 2 2 4))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "645-set-mismatch.rkt",
+    "commit": "7aed964"
+  }
+}

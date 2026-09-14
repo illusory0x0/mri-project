@@ -1,0 +1,14 @@
+{
+  "id": "lc-51-n-queens",
+  "locate": "described",
+  "operation": "replace-node",
+  "instruction": "In board->string the queen and empty-square characters are swapped. Put #\\Q where the queen is.",
+  "input": "\n(define (queens n)\n  (define (safe? x2 y2 lq)\n    (for/and ([x1 (in-list lq)]\n              [y1 (in-range (sub1 y2) -1 -1)])\n      (not (or (= x1 x2)\n               (= (abs (- x2 x1))\n                  (- y2 y1))))))\n  (let queen-cols ([k n])\n    (if (= k 0)\n        '(())\n        (for*/list ([rq (in-list (queen-cols (sub1 k)))]\n                    [r (in-range n)]\n                    #:when (safe? r k rq))\n          (cons r rq)))))\n\n(define ((board->string n) b)\n  (define (column q)\n    (build-string n (λ (x) (if (= q x) #\\. #\\Q))))\n  (foldl (λ (c l) (cons (column c) l)) '() b))\n\n(define (solve-n-queens n)\n  (map (board->string n) (queens n)))",
+  "expected": "\n(define (queens n)\n  (define (safe? x2 y2 lq)\n    (for/and ([x1 (in-list lq)]\n              [y1 (in-range (sub1 y2) -1 -1)])\n      (not (or (= x1 x2)\n               (= (abs (- x2 x1))\n                  (- y2 y1))))))\n  (let queen-cols ([k n])\n    (if (= k 0)\n        '(())\n        (for*/list ([rq (in-list (queen-cols (sub1 k)))]\n                    [r (in-range n)]\n                    #:when (safe? r k rq))\n          (cons r rq)))))\n\n(define ((board->string n) b)\n  (define (column q)\n    (build-string n (λ (x) (if (= q x) #\\Q #\\.))))\n  (foldl (λ (c l) (cons (column c) l)) '() b))\n\n(define (solve-n-queens n)\n  (map (board->string n) (queens n)))",
+  "probe": "(solve-n-queens 4)",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "51-n-queens.rkt",
+    "commit": "7aed964"
+  }
+}

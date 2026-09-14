@@ -219,7 +219,7 @@ function renderMatrix(): void {
     html +=
       '<tr><td class="taskcell"><div class="tid">' + esc(task.id) + "</div>" +
       '<div class="ins">' + esc(task.instruction) + "</div>" +
-      '<div class="tags"><span class="tag">' + esc(task.construct) + "</span>" +
+      '<div class="tags"><span class="tag">' + esc(task.operation ?? task.construct ?? "") + "</span>" +
       '<span class="tag alt">' + esc(task.locate) + "</span>" +
       '<span class="tag alt">depth ' + task.depth + "</span>" +
       (task.bracketDanger ? '<span class="tag">bracket</span>' : "") +

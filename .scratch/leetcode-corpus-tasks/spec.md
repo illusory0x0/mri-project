@@ -149,6 +149,10 @@ names the path or the targeted expression, `described` refers to it by role.
   the semantic verdict discriminates. Where a seed is structurally
   discriminating but semantically silent, keep it and say so in the task.
 - The scorer already treats non-termination as `unknown`; no new budget.
+- Scored programs are evaluated in the full `racket` language, not just
+  `racket/base`: the scorer `require`s `racket` into its namespace before
+  installing the I/O guards (ADR 0009 amended). Base-only bindings are therefore
+  not a constraint on corpus task selection.
 
 ## Attribution (Q8)
 

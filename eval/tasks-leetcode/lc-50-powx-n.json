@@ -1,0 +1,14 @@
+{
+  "id": "lc-50-powx-n",
+  "locate": "described",
+  "operation": "replace-node",
+  "instruction": "In my-pow the negative-exponent branch multiplies where it should divide. Swap the two operators so a negative exponent divides.",
+  "input": "\n(define (my-pow x n)\n  ((if (< n 0) * /)\n   (let loop ([x x] [n n] [result 1])\n     (if (zero? n) result\n       (loop (sqr x) (quotient n 2)\n             (if (odd? n) (* x result) result))))))",
+  "expected": "\n(define (my-pow x n)\n  ((if (< n 0) / *)\n   (let loop ([x x] [n n] [result 1])\n     (if (zero? n) result\n       (loop (sqr x) (quotient n 2)\n             (if (odd? n) (* x result) result))))))",
+  "probe": "(my-pow 2 -2)",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "50-powx-n.rkt",
+    "commit": "7aed964"
+  }
+}

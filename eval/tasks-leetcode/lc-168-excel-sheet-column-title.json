@@ -1,0 +1,14 @@
+{
+  "id": "lc-168-excel-sheet-column-title",
+  "locate": "explicit",
+  "operation": "wrap-node",
+  "instruction": "In convert-to-title the loop feeds n straight to quotient/remainder. Wrap n in (- n 1) so the numbering is one-based.",
+  "input": "\n(define (convert-to-title column-num)\n  (list->string\n    (let loop ([n column-num] [title '()])\n      (if (zero? n)\n          title\n          (let-values ([(q r) (quotient/remainder n 26)])\n            (loop q (cons (integer->char (+ r 65))\n                          title)))))))",
+  "expected": "\n(define (convert-to-title column-num)\n  (list->string\n    (let loop ([n column-num] [title '()])\n      (if (zero? n)\n          title\n          (let-values ([(q r) (quotient/remainder (- n 1) 26)])\n            (loop q (cons (integer->char (+ r 65))\n                          title)))))))",
+  "probe": "(convert-to-title 1)",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "168-excel-sheet-column-title.rkt",
+    "commit": "7aed964"
+  }
+}

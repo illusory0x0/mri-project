@@ -1,0 +1,14 @@
+{
+  "id": "lc-198-house-robber-lazy",
+  "locate": "described",
+  "operation": "replace-node",
+  "instruction": "In rob the lazy recurrence looks back one house too far. Subtract 1 from i instead of 2 when reaching for the previous-but-one value.",
+  "input": "\n(define (rob nums)\n  (define len (length nums))\n  (define (dp-ref i)\n    (force (vector-ref dp i)))\n  (define dp\n    (for/vector ([i (in-naturals)]\n                 [x (in-list nums)])\n      (cond [(= i 0) x]\n            [(= i 1)\n             (delay (max x (dp-ref 0)))]\n            [else\n             (delay\n               (max (+ x (dp-ref (- i 1)))\n                    (dp-ref (- i 1))))])))\n  (dp-ref (- len 1)))",
+  "expected": "\n(define (rob nums)\n  (define len (length nums))\n  (define (dp-ref i)\n    (force (vector-ref dp i)))\n  (define dp\n    (for/vector ([i (in-naturals)]\n                 [x (in-list nums)])\n      (cond [(= i 0) x]\n            [(= i 1)\n             (delay (max x (dp-ref 0)))]\n            [else\n             (delay\n               (max (+ x (dp-ref (- i 2)))\n                    (dp-ref (- i 1))))])))\n  (dp-ref (- len 1)))",
+  "probe": "(rob '(2 7 9 3 1))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "198-house-robber-lazy.rkt",
+    "commit": "7aed964"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "id": "lc-151-reverse-words",
+  "locate": "described",
+  "operation": "wrap-node",
+  "instruction": "In reverse-words the words come out in their original order. Wrap the string-split call in reverse so the words are reversed.",
+  "input": "\n(define (reverse-words s)\n  (string-join\n      (string-split s)))",
+  "expected": "\n(define (reverse-words s)\n  (string-join\n    (reverse\n      (string-split s))))",
+  "probe": "(reverse-words \"the sky is blue\")",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "151-reverse-words-in-a-string.rkt",
+    "commit": "7aed964"
+  }
+}

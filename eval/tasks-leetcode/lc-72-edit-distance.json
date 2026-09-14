@@ -1,0 +1,14 @@
+{
+  "id": "lc-72-edit-distance",
+  "locate": "described",
+  "operation": "delete-node",
+  "instruction": "In min-distance the substitution branch adds a spurious 0 to min, which pins every distance to zero. Remove that 0.",
+  "input": "\n;; Lazy dynamic programming, simple but effective\n;; https://jelv.is/blog/Lazy-Dynamic-Programming/\n\n(define (min-distance word1 word2)\n  (define len1 (string-length word1))\n  (define len2 (string-length word2))\n\n  (define (dp-ref i j)\n    (force (vector-ref (vector-ref dp i) j)))\n  (define dp\n    (for/vector ([i (in-range (+ len1 1))])\n      (for/vector ([j (in-range (+ len2 1))])\n        (cond [(= i 0) j]\n              [(= j 0) i]\n              [(char=? (string-ref word1 (- i 1))\n                       (string-ref word2 (- j 1)))\n               (delay (dp-ref (- i 1) (- j 1)))]\n              [else\n               (delay\n                 (+ 1 (min 0 (dp-ref i (- j 1))\n                           (dp-ref (- i 1) j)\n                           (dp-ref (- i 1) (- j 1)))))]))))\n\n  (dp-ref len1 len2))",
+  "expected": "\n;; Lazy dynamic programming, simple but effective\n;; https://jelv.is/blog/Lazy-Dynamic-Programming/\n\n(define (min-distance word1 word2)\n  (define len1 (string-length word1))\n  (define len2 (string-length word2))\n\n  (define (dp-ref i j)\n    (force (vector-ref (vector-ref dp i) j)))\n  (define dp\n    (for/vector ([i (in-range (+ len1 1))])\n      (for/vector ([j (in-range (+ len2 1))])\n        (cond [(= i 0) j]\n              [(= j 0) i]\n              [(char=? (string-ref word1 (- i 1))\n                       (string-ref word2 (- j 1)))\n               (delay (dp-ref (- i 1) (- j 1)))]\n              [else\n               (delay\n                 (+ 1 (min (dp-ref i (- j 1))\n                           (dp-ref (- i 1) j)\n                           (dp-ref (- i 1) (- j 1)))))]))))\n\n  (dp-ref len1 len2))",
+  "probe": "(min-distance \"abc\" \"xyz\")",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "72-edit-distance.rkt",
+    "commit": "7aed964"
+  }
+}

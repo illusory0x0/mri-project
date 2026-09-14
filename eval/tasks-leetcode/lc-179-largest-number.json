@@ -1,0 +1,14 @@
+{
+  "id": "lc-179-largest-number",
+  "locate": "explicit",
+  "operation": "insert-node",
+  "instruction": "In largest-number the helper e is missing, so the program does not run. Add (define (e x) (expt 10 x)) as a top-level form.",
+  "input": "\n(define (count-digit n)\n  (let loop ([n n] [d 1])\n    (if (< n 10)\n        d\n        (loop (quotient n 10) (add1 d)))))\n\n(define (first-digit n)\n  (quotient n (e (- (count-digit n) 1))))\n\n(define (combine x y)\n  (+ (* x (e (count-digit y)))\n     y))\n\n(define (largest-number nums)\n  (define (greater-than? x y)\n    (let ([x-head (first-digit x)]\n          [y-head (first-digit y)])\n      (or (> x-head y-head)\n          (and (= x-head y-head)\n               (> (combine x y) (combine y x))))))\n  (define lst (sort nums greater-than?))\n  (if (zero? (car lst))\n      \"0\"\n      (string-append* (map number->string lst))))",
+  "expected": "\n(define (e x) (expt 10 x))\n\n(define (count-digit n)\n  (let loop ([n n] [d 1])\n    (if (< n 10)\n        d\n        (loop (quotient n 10) (add1 d)))))\n\n(define (first-digit n)\n  (quotient n (e (- (count-digit n) 1))))\n\n(define (combine x y)\n  (+ (* x (e (count-digit y)))\n     y))\n\n(define (largest-number nums)\n  (define (greater-than? x y)\n    (let ([x-head (first-digit x)]\n          [y-head (first-digit y)])\n      (or (> x-head y-head)\n          (and (= x-head y-head)\n               (> (combine x y) (combine y x))))))\n  (define lst (sort nums greater-than?))\n  (if (zero? (car lst))\n      \"0\"\n      (string-append* (map number->string lst))))",
+  "probe": "(largest-number '(10 2))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "179-largest-number.rkt",
+    "commit": "7aed964"
+  }
+}

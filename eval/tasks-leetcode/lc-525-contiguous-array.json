@@ -1,0 +1,14 @@
+{
+  "id": "lc-525-contiguous-array",
+  "locate": "described",
+  "operation": "replace-node",
+  "instruction": "In find-max-length the counter increments on every element. Decrement it when the element is 0.",
+  "input": "\n(define (find-max-length nums)\n  (define table (make-hash '((0 . -1))))\n  (for/fold ([cnt 0] [len 0]\n             #:result len)\n            ([n (in-list nums)]\n             [i (in-naturals)])\n    (define next-cnt\n      ((if (= n 1) add1 add1) cnt))\n    (define prev-i (hash-ref! table next-cnt i))\n    (values next-cnt\n            (max len (- i prev-i)))))",
+  "expected": "\n(define (find-max-length nums)\n  (define table (make-hash '((0 . -1))))\n  (for/fold ([cnt 0] [len 0]\n             #:result len)\n            ([n (in-list nums)]\n             [i (in-naturals)])\n    (define next-cnt\n      ((if (= n 1) add1 sub1) cnt))\n    (define prev-i (hash-ref! table next-cnt i))\n    (values next-cnt\n            (max len (- i prev-i)))))",
+  "probe": "(find-max-length '(0 1))",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "525-contiguous-array.rkt",
+    "commit": "7aed964"
+  }
+}

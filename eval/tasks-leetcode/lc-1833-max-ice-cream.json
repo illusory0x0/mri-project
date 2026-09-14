@@ -1,0 +1,14 @@
+{
+  "id": "lc-1833-max-ice-cream",
+  "locate": "explicit",
+  "operation": "replace-node",
+  "instruction": "In max-ice-cream the #:break guard compares rem and cost the wrong way. Break when rem is greater than cost.",
+  "input": "\n(define (max-ice-cream costs coins)\n  (for/fold ([rem coins]\n             [cnt 0]\n             #:result cnt)\n            ([cost (in-list (sort costs <))])\n    #:break (> rem cost)\n    (values (- rem cost)\n            (add1 cnt))))",
+  "expected": "\n(define (max-ice-cream costs coins)\n  (for/fold ([rem coins]\n             [cnt 0]\n             #:result cnt)\n            ([cost (in-list (sort costs <))])\n    #:break (< rem cost)\n    (values (- rem cost)\n            (add1 cnt))))",
+  "probe": "(max-ice-cream '(1 3 2 4 1) 7)",
+  "source": {
+    "repo": "https://github.com/s-cerevisiae/leetcode-racket",
+    "file": "1833-maximum-ice-cream-bars.rkt",
+    "commit": "7aed964"
+  }
+}
