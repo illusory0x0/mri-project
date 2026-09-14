@@ -160,6 +160,7 @@ export interface SummaryProvenance {
   model: string;
   temperature: string;
   driver: string;
+  taskSet: string;
   armHash: string;
   vocabHash: string;
   taskSetHash: string;
@@ -169,6 +170,19 @@ export interface SummaryProvenance {
 export interface ConstructSummary {
   arm: ArmName;
   construct: ConstructKind;
+  runs: number;
+  successRate: number;
+  structuralRate: number;
+  semanticRate: number;
+  semanticScored: number;
+  meanSteps: number;
+  meanTokens: number;
+  totalTokens: number;
+}
+
+export interface OperationSummary {
+  arm: ArmName;
+  operation: OperationKind;
   runs: number;
   successRate: number;
   structuralRate: number;
@@ -194,7 +208,8 @@ export interface BatchingStat {
 export interface SummaryRunRow {
   taskId: string;
   arm: ArmName;
-  construct: ConstructKind;
+  construct: ConstructKind | null;
+  operation: OperationKind | null;
   locate: LocateDifficulty;
   success: boolean;
   structural: boolean;
@@ -211,6 +226,7 @@ export interface SummarySnapshot {
   headline: ArmSummary[];
   bracketDanger: BracketDangerCell;
   perConstruct: ConstructSummary[];
+  perOperation: OperationSummary[];
   cells: CellSummary[];
   batching: BatchingStat[];
   runs: SummaryRunRow[];

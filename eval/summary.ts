@@ -16,6 +16,8 @@ import {
   ConstructKind,
   ConstructSummary,
   LocateDifficulty,
+  OperationKind,
+  OperationSummary,
   RunResult,
   SummaryProvenance,
   SummaryRunRow,
@@ -30,6 +32,13 @@ const CONSTRUCT_ORDER: ConstructKind[] = [
   "build",
   "copy",
   "multi",
+];
+const OPERATION_ORDER: OperationKind[] = [
+  "replace-node",
+  "insert-node",
+  "delete-node",
+  "wrap-node",
+  "move-subtree",
 ];
 
 function sha256(parts: Array<string | Buffer>): string {
@@ -100,6 +109,7 @@ export async function collectProvenance(
     model: models.join(","),
     temperature: temperatures.join(","),
     driver: drivers.join(","),
+    taskSet: path.basename(dirs.tasks),
     armHash: await hashDir(dirs.arms, (name) => name.endsWith(".json")),
     vocabHash: await hashFiles(["src/ops.ts", "eval/tools.ts"]),
     taskSetHash: await hashDir(dirs.tasks, (name) => name.endsWith(".json")),
@@ -143,17 +153,11 @@ export function computeBatching(runs: RunResult[]): BatchingStat[] {
   }).filter((stat) => stat.assistantTurns > 0);
 }
 
-function summarizeConstruct(
-  arm: ArmName,
-  construct: ConstructKind,
-  results: RunResult[]
-): ConstructSummary {
+function summarizeRuns(arm: ArmName, results: RunResult[]) {
   const scored = results.filter(
     (result) => result.semantic !== null && result.semantic !== "unknown"
   );
   return {
-    arm,
-    construct,
     runs: results.length,
     successRate: mean(results.map((result) => (result.success ? 1 : 0))),
     structuralRate: mean(results.map((result) => (result.structural ? 1 : 0))),
@@ -168,6 +172,22 @@ function summarizeConstruct(
   };
 }
 
+function summarizeConstruct(
+  arm: ArmName,
+  construct: ConstructKind,
+  results: RunResult[]
+): ConstructSummary {
+  return { arm, construct, ...summarizeRuns(arm, results) };
+}
+
+function summarizeOperation(
+  arm: ArmName,
+  operation: OperationKind,
+  results: RunResult[]
+): OperationSummary {
+  return { arm, operation, ...summarizeRuns(arm, results) };
+}
+
 function runRows(
   runs: RunResult[],
   tasksById: Map<string, Task>
@@ -178,7 +198,8 @@ function runRows(
       return {
         taskId: run.taskId,
         arm: run.arm,
-        construct: task?.construct ?? "atom",
+        construct: task?.construct ?? null,
+        operation: task?.operation ?? null,
         locate: task?.locate ?? "explicit",
         success: run.success,
         structural: run.structural,
@@ -200,6 +221,7 @@ export function buildSnapshot(
 ): SummarySnapshot {
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
   const perConstruct: ConstructSummary[] = [];
+  const perOperation: OperationSummary[] = [];
   const cells: CellSummary[] = [];
   const LOCATES: LocateDifficulty[] = ["explicit", "described"];
   for (const arm of ARM_ORDER) {
@@ -207,7 +229,7 @@ export function buildSnapshot(
       const results = runs.filter(
         (run) =>
           run.arm === arm &&
-          (tasksById.get(run.taskId)?.construct ?? "atom") === construct
+          tasksById.get(run.taskId)?.construct === construct
       );
       if (results.length > 0) {
         perConstruct.push(summarizeConstruct(arm, construct, results));
@@ -224,6 +246,16 @@ export function buildSnapshot(
         }
       }
     }
+    for (const operation of OPERATION_ORDER) {
+      const results = runs.filter(
+        (run) =>
+          run.arm === arm &&
+          tasksById.get(run.taskId)?.operation === operation
+      );
+      if (results.length > 0) {
+        perOperation.push(summarizeOperation(arm, operation, results));
+      }
+    }
   }
 
   return {
@@ -231,6 +263,7 @@ export function buildSnapshot(
     headline: summarizeHeadline(runs, tasks),
     bracketDanger: summarizeBracketDanger(runs, tasks),
     perConstruct,
+    perOperation,
     cells,
     batching: computeBatching(runs),
     runs: runRows(runs, tasksById),
@@ -304,7 +337,8 @@ async function main(): Promise<void> {
   const outFile = path.join(outDir, name);
   await writeFile(outFile, JSON.stringify(snapshot, null, 2) + "\n", "utf8");
   process.stdout.write(
-    `wrote ${outFile} (${runs.length} runs, ${snapshot.perConstruct.length} constructs)\n`
+    `wrote ${outFile} (${runs.length} runs, task set ${provenance.taskSet}, ` +
+      `${snapshot.perConstruct.length} constructs, ${snapshot.perOperation.length} operations)\n`
   );
 }
 

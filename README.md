@@ -32,6 +32,13 @@ The `eval/` harness runs a model against a set of **tasks** using several
   subset that crosses `locate` and `construct` (each pair shares the program and
   differs only in the instruction) so a per-`construct` cost is not confounded
   by `locate`; run it with `--tasks eval/tasks-orthogonal`.
+  `eval/tasks-leetcode/` is a third set authored from a corpus of real Racket
+  LeetCode solutions. Its tasks are *mutate-existing*: `expected` is the
+  original solution and `input` is the same program with one seeded edit. They
+  carry an `operation` (`replace-node` / `insert-node` / `delete-node` /
+  `wrap-node` / `move-subtree`) instead of `construct`, and a `source` object
+  recording the upstream repository, file, and commit. Run them with
+  `--tasks eval/tasks-leetcode`.
 - **Arms** live in `eval/arms/*.json`:
   - `direct` — reply with the whole program.
   - `ast-edit` — use the `lisp_editor` structural tool. Its prompt encourages
@@ -44,10 +51,10 @@ The `eval/` harness runs a model against a set of **tasks** using several
   and temperature actually used, its structural/semantic verdicts, and the
   task's target depth.
 - `just summary` derives a compact, committable snapshot under
-  `eval/summaries/`: provenance (git commit, model, and content hashes of arms,
-  vocabulary, task set, and scorer), per-arm and per-`construct` aggregates, and
-  batching diagnostics, with no transcripts. The snapshot is the durable record;
-  raw results can be pruned. See
+  `eval/summaries/`: provenance (git commit, task set, model, and content hashes
+  of arms, vocabulary, task set, and scorer), per-arm, per-`construct`, and
+  per-`operation` aggregates, and batching diagnostics, with no transcripts. The
+  snapshot is the durable record; raw results can be pruned. See
   `docs/adr/0010-commit-compact-eval-summaries.md`.
 
 ### Run against a model
@@ -77,11 +84,11 @@ Run `node dist/eval/run.js -h` for the full flag list.
 - Every run artifact self-describes the driver that produced it (`mock` or
   `openai`) and the configuration actually used, and the report shows the same
   in a run's request context, so a mock run is never mistaken for a real one.
-- The scorer reads and evaluates candidate programs in a namespace where
-  filesystem, process, network, and environment bindings are blocked. A
-  blocked candidate is flagged `ioViolation` instead of being scored as an
-  ordinary verdict. This is detection, not a real sandbox — see
-  `docs/adr/0009-scored-programs-no-io-guard.md`.
+- The scorer reads and evaluates candidate programs in a namespace loaded with
+  the full Racket language, where filesystem, process, network, and environment
+  bindings are blocked. A blocked candidate is flagged `ioViolation` instead of
+  being scored as an ordinary verdict. This is detection, not a real sandbox —
+  see `docs/adr/0009-scored-programs-no-io-guard.md`.
 - Scorer verdicts are pinned by a table-driven golden corpus over the whole
   task set, and the patch-application seam has its own boundary tests.
 
@@ -91,3 +98,11 @@ Run `node dist/eval/run.js -h` for the full flag list.
 just report        # writes eval/report.html to browse runs interactively
 just summary       # writes a compact snapshot to eval/summaries/ and commits it
 ```
+
+## Acknowledgements
+
+The LeetCode corpus under `eval/tasks-leetcode/` is derived from
+[`s-cerevisiae/leetcode-racket`](https://github.com/s-cerevisiae/leetcode-racket)
+(MIT), via the clone kept in the git-ignored `tmp/`. That clone is a fork, not
+the upstream; each task records the upstream repository, file, and clone commit
+in its `source` field.

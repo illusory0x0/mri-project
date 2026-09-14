@@ -836,6 +836,7 @@ test("summary: builds per-construct totals, batching rate, and hides danger task
     model: "m",
     temperature: "1",
     driver: "openai",
+    taskSet: "tasks",
     armHash: "arm",
     vocabHash: "vocab",
     taskSetHash: "tasks",
@@ -913,4 +914,56 @@ test("headline summary excludes exactly the bracket-danger task list", () => {
 
   const note = headlineNote(cell.taskIds.length);
   assert.match(note, new RegExp("排除 " + cell.taskIds.length + " 个"));
+});
+
+test("summary: corpus tasks group under their operation, not construct", () => {
+  const opTask: Task = {
+    id: "t-move",
+    locate: "described",
+    operation: "move-subtree",
+    instruction: "",
+    input: "",
+    expected: "",
+  };
+  const run: RunResult = {
+    taskId: opTask.id,
+    arm: "ast-edit",
+    driver: "mock",
+    parsed: true,
+    parenMismatch: false,
+    hunkFailure: false,
+    ioViolation: false,
+    evaluates: true,
+    success: true,
+    structural: true,
+    semantic: null,
+    depth: 0,
+    parseError: null,
+    steps: 1,
+    tokens: 1,
+    finalArtifact: "",
+    transcript: [],
+  };
+  const provenance = {
+    generatedAt: "2026-09-14T00:00:00.000Z",
+    gitCommit: "abc",
+    gitDirty: false,
+    model: "mock",
+    temperature: "default",
+    driver: "mock",
+    taskSet: "tasks-leetcode",
+    armHash: "arm",
+    vocabHash: "vocab",
+    taskSetHash: "tasks",
+    scorerHash: "scorer",
+  };
+  const snapshot = buildSnapshot([run], [opTask], provenance);
+  assert.equal(snapshot.perConstruct.length, 0);
+  const operation = snapshot.perOperation.find(
+    (item) => item.operation === "move-subtree"
+  )!;
+  assert.equal(operation.runs, 1);
+  assert.equal(snapshot.runs[0].construct, null);
+  assert.equal(snapshot.runs[0].operation, "move-subtree");
+  assert.equal(snapshot.provenance.taskSet, "tasks-leetcode");
 });

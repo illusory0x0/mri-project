@@ -9,21 +9,21 @@ operations (`wrap-node`/`move-subtree`/`insert-node`/`delete-node`) so the
 
 **Blocked by:** 01, 02
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `eval/tasks-leetcode/` holds ~20 task JSON files, one per selected file.
-- [ ] Extend **Task** with an optional `operation`
+- [x] `eval/tasks-leetcode/` holds ~20 task JSON files, one per selected file.
+- [x] Extend **Task** with an optional `operation`
       (`replace-node`/`insert-node`/`delete-node`/`wrap-node`/`move-subtree`) and
       an optional `source` (`{repo, file, commit}`); `construct` becomes
       optional. The loader accepts both shapes.
-- [ ] Every task's `expected` is the unmodified solution (minus `#lang`); every
+- [x] Every task's `expected` is the unmodified solution (minus `#lang`); every
       `input` differs from it by exactly one seeded edit.
-- [ ] Every task carries a probe that calls the entry function on a small
+- [x] Every task carries a probe that calls the entry function on a small
       terminating input; seeds whose probe output changes are preferred, and any
       structurally-only seed is annotated.
-- [ ] The operation mix is recorded and includes at least one task for each of
+- [x] The operation mix is recorded and includes at least one task for each of
       `wrap-node`, `move-subtree`, `insert-node`, and `delete-node`.
-- [ ] A load test asserts each `expected` scores structurally equal and, where a
+- [x] A load test asserts each `expected` scores structurally equal and, where a
       probe exists, semantically `equal`; each `input` diverges; every `source`
       field is present.
-- [ ] `just typecheck` and `just test` pass.
+- [x] `just typecheck` and `just test` pass.

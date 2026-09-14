@@ -7,15 +7,15 @@ orthogonal cells; the README credits the corpus and documents the new set.
 
 **Blocked by:** 03
 
-**Status:** ready-for-agent
+**Status:** done
 
-- [ ] `--tasks eval/tasks-leetcode` loads and runs the corpus set through the
+- [x] `--tasks eval/tasks-leetcode` loads and runs the corpus set through the
       existing arms with no harness changes beyond task-shape handling.
-- [ ] Tasks without `construct` do not break per-`construct` aggregation; the
+- [x] Tasks without `construct` do not break per-`construct` aggregation; the
       snapshot reports corpus tasks under their `operation` instead.
-- [ ] The summary groups results by task set (synthetic / orthogonal / corpus).
-- [ ] README gains the **Acknowledgements** section crediting upstream
+- [x] The summary groups results by task set (synthetic / orthogonal / corpus).
+- [x] README gains the **Acknowledgements** section crediting upstream
       `s-cerevisiae/leetcode-racket` (MIT) and states that `tmp/` is a fork.
-- [ ] README documents `eval/tasks-leetcode/`, the mutate-existing task format,
+- [x] README documents `eval/tasks-leetcode/`, the mutate-existing task format,
       the `operation` axis, and the `source` field.
-- [ ] `just typecheck` and `just test` pass.
+- [x] `just typecheck` and `just test` pass.
