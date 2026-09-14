@@ -287,14 +287,13 @@ integration tests establish the pattern future work should follow.
   out of its parent list and `insert` places a node at a chosen index (the root
   is the program's list of top-level forms, so inserting into the root adds a
   top-level form and bootstraps an empty program).
-- **Vocabulary v2 adopted.** The first real-model runs showed `outline`
-  classified `cond`, `let*`, and plain `list` nodes that no shape could
-  construct, that `define` could not build a function header, and that wrapping a
-  compound body was expensive. v2 adds `cond`, `let*`, `list`, and `define-fn`
-  shapes. An atomic `wrap`/transform verb was weighed against the one-node-per-
-  call model and rejected for now: v2 keeps the model and documents the
-  copy-before-overwrite order instead (see the shape catalogue). A `just eval`
-  re-run to compare cost and expressiveness against v1 is still pending.
+- **Vocabulary v2 adopted.** `outline` classified `cond`, `let*`, and plain
+  `list` nodes that no shape could construct, `define` could not build a function
+  header, and wrapping a compound body had no atomic verb. v2 adds `cond`,
+  `let*`, `list`, and `define-fn` shapes. An atomic `wrap`/transform verb was
+  weighed against the one-node-per-call model and rejected: v2 keeps the model
+  and documents the copy-before-overwrite order instead (see the shape
+  catalogue).
 - **Deferred: cost by construct.** The summary reports a single step/token figure
   per arm, which averages `atom` tasks (≈2 steps) with `build` tasks (≈12 steps)
   and hides where the vocabulary is expensive. Splitting the cost summary by
