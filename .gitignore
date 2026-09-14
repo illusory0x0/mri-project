@@ -3,4 +3,4 @@ dist/
 eval/results/
 eval/report.html
 package-lock.json
-.openai
+.env

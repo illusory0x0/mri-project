@@ -1,4 +1,5 @@
 set shell := ["bash", "-c"]
+set dotenv-load := true
 
 export PATH := "./node_modules/.bin:" + env_var("PATH")
 

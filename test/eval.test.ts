@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { test } from "node:test";
 import { computeTargetDepth } from "../eval/depth.js";
 import { MockDriver } from "../eval/drivers/mock.js";
-import { parseArgs } from "../eval/options.js";
+import { applyEnvFallbacks, parseArgs } from "../eval/options.js";
 import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
 import { loadTasks, mapLimit, runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
@@ -634,6 +634,33 @@ test("parseArgs: LISP_EDITOR_* env vars are not read", () => {
     if (previous === undefined) delete process.env.LISP_EDITOR_API_KEY;
     else process.env.LISP_EDITOR_API_KEY = previous;
   }
+});
+
+test("applyEnvFallbacks: OPENAI_* fill missing values and flags win", () => {
+  const env = {
+    OPENAI_BASE_URL: "https://env.test/v1",
+    OPENAI_API_KEY: "env-key",
+    OPENAI_MODEL: "env-model",
+  };
+  const filled = applyEnvFallbacks(parseArgs([]), env);
+  assert.equal(filled.baseUrl, "https://env.test/v1");
+  assert.equal(filled.apiKey, "env-key");
+  assert.equal(filled.model, "env-model");
+
+  const flagged = applyEnvFallbacks(
+    parseArgs([
+      "--base-url",
+      "https://flag.test/v1",
+      "--api-key",
+      "flag-key",
+      "--model",
+      "flag-model",
+    ]),
+    env
+  );
+  assert.equal(flagged.baseUrl, "https://flag.test/v1");
+  assert.equal(flagged.apiKey, "flag-key");
+  assert.equal(flagged.model, "flag-model");
 });
 
 test("runProcess: aborting kills the running child", async () => {

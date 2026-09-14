@@ -21,9 +21,9 @@ Options:
   --arm <name>            Run only this arm (repeatable)
   --task <id>             Run only this task by exact id (repeatable)
   --out <dir>             Output directory (default: eval/results)
-  --model <name>          Model name (required for openai)
-  --base-url <url>        API base URL (required for openai)
-  --api-key <key>         API key (required for openai)
+  --model <name>          Model name (openai; env OPENAI_MODEL)
+  --base-url <url>        API base URL (openai; env OPENAI_BASE_URL)
+  --api-key <key>         API key (openai; env OPENAI_API_KEY)
   --temperature <n>       Sampling temperature (default: 0)
   --timeout <seconds>     Per-run timeout in seconds (default: 180)
   --concurrency <n>       Max runs in flight (default: 4)
@@ -100,4 +100,16 @@ export function parseArgs(argv: string[]): Options {
   if (arms.length > 0) options.arms = arms;
   if (tasks.length > 0) options.tasks = tasks;
   return options;
+}
+
+export function applyEnvFallbacks(
+  options: Options,
+  env: NodeJS.ProcessEnv = process.env
+): Options {
+  return {
+    ...options,
+    baseUrl: options.baseUrl || env.OPENAI_BASE_URL || "",
+    apiKey: options.apiKey || env.OPENAI_API_KEY || "",
+    model: options.model || env.OPENAI_MODEL || "",
+  };
 }

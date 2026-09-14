@@ -2,7 +2,7 @@ import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { MockDriver } from "./drivers/mock.js";
 import { OpenAICompatibleDriver } from "./drivers/openai.js";
-import { Options, parseArgs, USAGE } from "./options.js";
+import { applyEnvFallbacks, Options, parseArgs, USAGE } from "./options.js";
 import {
   loadArms,
   loadTasks,
@@ -35,7 +35,7 @@ async function main(): Promise<void> {
     process.stdout.write(USAGE);
     return;
   }
-  const options = parseArgs(argv);
+  const options = applyEnvFallbacks(parseArgs(argv));
   const driver = makeDriver(options);
   const allArms = await loadArms();
   const arms = options.arms
