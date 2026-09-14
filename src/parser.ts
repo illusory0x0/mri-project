@@ -16,6 +16,8 @@ function isDelimiter(ch: string): boolean {
     ch === ")" ||
     ch === '"' ||
     ch === ";" ||
+    ch === "`" ||
+    ch === "," ||
     ch === " " ||
     ch === "\t" ||
     ch === "\n" ||

@@ -1057,6 +1057,10 @@ test("options: --repeats parses a positive integer and defaults to one", () => {
   assert.throws(() => parseArgs(["--repeats", "0"]));
 });
 
+test("options: an unknown --arm is rejected", () => {
+  assert.throws(() => parseArgs(["--arm", "bogus"]), /unknown arm/);
+});
+
 test("run artifacts: names encode repeats only when repeating", () => {
   assert.equal(resultFileName("ast-edit", "t01", 1, 1), "ast-edit-t01.json");
   assert.equal(

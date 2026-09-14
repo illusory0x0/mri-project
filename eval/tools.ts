@@ -6,7 +6,7 @@ export const TOOL_SPECS: Record<string, ToolSpec> = {
     description:
       "Edit the current Lisp program by AST path. `args` is the full argument list to the lisp-editor CLI. The current program is fed on stdin and the edited program is returned on success.\n" +
       "Commands:\n" +
-      "- [\"outline\"] lists every node as {path, kind, ...}. kind is the semantic construct: \"define\", \"lambda\", \"let\", \"if\", \"cond\" for special forms; \"apply\" (with a head field naming the operator) for function calls; \"list\" for skeletons and data lists; \"symbol\", \"number\", \"string\", or \"hole\" (with a value field) for atoms. Call this first to find paths.\n" +
+      "- [\"outline\"] lists every node as {path, kind, ...}. kind is the semantic construct: \"define\", \"lambda\", \"let\", \"let*\", \"if\", \"cond\", \"quote\" for special forms; \"apply\" (with a head field naming the operator) for other symbol-headed lists; \"list\" for skeletons and data lists; \"symbol\", \"number\", \"string\", \"boolean\", \"character\", or \"hole\" (with a value field) for atoms. Call this first to find paths.\n" +
       "- [\"replace\", \"<shape>\", \"--out\", \"<path>\"] replaces the node at <path> with a shape skeleton.\n" +
       "- [\"replace\", \"--in\", \"<srcPath>\", \"--out\", \"<dstPath>\"] copies an existing subtree.\n" +
       "- [\"delete\", \"--out\", \"<path>\"] removes the node at <path> by splicing it out of its parent list, so the list gets shorter. The root cannot be deleted and the parent must be a list.\n" +

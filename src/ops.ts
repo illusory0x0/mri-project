@@ -96,7 +96,7 @@ export function expandShape(spec: string): Node {
   }
 
   throw new OpsError(
-    `unknown shape: ${spec} (valid shapes: lambda, if, define, define-fn, let, let*, letrec, let-loop, cond, and, or, when, unless, begin, list, apply:<n>, hole; atoms: var:<name>, num:<n>, str:<s>)`
+    `unknown shape: ${spec} (valid shapes: ${Object.keys(SHAPES).join(", ")}, apply:<n>; atoms: var:<name>, num:<n>, str:<s>)`
   );
 }
 

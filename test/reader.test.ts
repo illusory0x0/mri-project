@@ -84,6 +84,20 @@ test("reader: unquote is rejected", () => {
   assert.match(result.stderr, /not supported/);
 });
 
+test("reader: an embedded unquote is rejected", () => {
+  const result = run("(f 1,2)", ["outline"]);
+  assert.equal(result.code, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /not supported/);
+});
+
+test("reader: an embedded backquote is rejected", () => {
+  const result = run("(f `x)", ["outline"]);
+  assert.equal(result.code, 1);
+  assert.equal(result.stdout, "");
+  assert.match(result.stderr, /not supported/);
+});
+
 test("reader: a dangling quote is a parse error", () => {
   const result = run("'", ["outline"]);
   assert.equal(result.code, 1);

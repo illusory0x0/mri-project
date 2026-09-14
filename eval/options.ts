@@ -1,5 +1,5 @@
 import path from "node:path";
-import { ArmName } from "./types.js";
+import { ARM_NAMES, ArmName } from "./types.js";
 
 export interface Options {
   driver: "mock" | "openai";
@@ -59,9 +59,14 @@ export function parseArgs(argv: string[]): Options {
       case "--driver":
         options.driver = value() as Options["driver"];
         break;
-      case "--arm":
-        arms.push(value() as ArmName);
+      case "--arm": {
+        const name = value();
+        if (!ARM_NAMES.includes(name as ArmName)) {
+          throw new Error(`unknown arm: ${name}\n\n${USAGE}`);
+        }
+        arms.push(name as ArmName);
         break;
+      }
       case "--task":
         tasks.push(value());
         break;

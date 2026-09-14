@@ -172,6 +172,7 @@ export interface SummaryProvenance {
   taskSets: TaskSetRef[];
   armHash: string;
   vocabHash: string;
+  /** Hash of the whole tasks tree, stable across `--tasks` narrowing. */
   taskSetHash: string;
   scorerHash: string;
 }

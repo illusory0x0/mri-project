@@ -68,7 +68,8 @@ small terminating input. Source is inlined into the task JSON, so tasks are
 self-contained and reproducible without the clone, and each task records the
 upstream repository, file, and clone commit in `source`.
 
-**Selection.** From 95 root files, judged against the supported subset (see
+**Selection.** From the 95 solution files in the corpus root (the two helper
+modules are excluded), judged against the supported subset (see
 `editor.md`): 50 were eligible, 4 weak, and 41 excluded (helper-module
 dependencies, other `require`s, `struct`/`class`, continuations, vector or hash
 literals, macros). Twenty were chosen for input-type diversity and a mix of

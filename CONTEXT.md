@@ -38,7 +38,8 @@ _Avoid_: tree dump, listing, index
 
 **Shape**:
 A named specification that produces a node when expanded: either a skeleton
-shape (`lambda`, `if`, `define`, `define-fn`, `let`, `let*`, `cond`, `list`,
+shape (`lambda`, `if`, `define`, `define-fn`, `let`, `let*`, `letrec`,
+`let-loop`, `cond`, `and`, `or`, `when`, `unless`, `begin`, `list`,
 `apply:<n>`) yielding a list with holes, or an atom shape (`var:<name>`,
 `num:<n>`, `str:<s>`, `hole`) yielding an atom.
 _Avoid_: template, macro, constructor
@@ -116,7 +117,7 @@ compared.
 _Avoid_: behavioral equality
 
 **Unknown** (semantic verdict):
-Recorded when a side does not terminate within the step budget, or cannot be read
+Recorded when a side does not terminate within the time budget, or cannot be read
 at all; excluded from the semantic denominator.
 _Avoid_: timeout, failure
 

@@ -147,7 +147,7 @@ grouping; the golden corpus pins scorer verdicts; and an integration test spawns
 
 - General semantic equivalence of arbitrary programs (undecidable). Only a
   task-declared probe is compared, and a side that does not terminate within the
-  step budget is reported as `unknown`.
+  time budget is reported as `unknown`.
 - Statistical significance testing across repeats; agreement is descriptive.
 - A real sandbox for scored programs; the I/O guard is detection only.
 - An MCP adapter.

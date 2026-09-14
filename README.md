@@ -95,8 +95,9 @@ Run `node dist/eval/run.js -h` for the full flag list.
   bindings are blocked. A blocked candidate is flagged `ioViolation` instead of
   being scored as an ordinary verdict. This is detection, not a real sandbox —
   see `docs/adr/0009-scored-programs-no-io-guard.md`.
-- Scorer verdicts are pinned by a table-driven golden corpus over the whole
-  task set, and the patch-application seam has its own boundary tests.
+- Scorer verdicts are pinned by a table-driven golden corpus over the Basic set,
+  with the LeetCode set pinned by its own per-task load test, and the
+  patch-application seam has its own boundary tests.
 
 ### Read the results
 
