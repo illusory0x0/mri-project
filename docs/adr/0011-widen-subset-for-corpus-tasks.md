@@ -24,4 +24,4 @@ longer holds. Because quote is represented canonically, the scorer's structural
 comparison against Racket-read expected programs still matches. The tool stays
 purely syntactic: no evaluation, no macro expansion.
 
-**Supersedes.** Amends ADR 0007.
+**Amends.** ADR 0007.
