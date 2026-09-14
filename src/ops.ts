@@ -176,10 +176,10 @@ export function insertAt(
 }
 
 export type OutlineKind =
-  | "define" | "lambda" | "let" | "let*" | "if" | "cond"
+  | "define" | "lambda" | "let" | "let*" | "if" | "cond" | "quote"
   | "apply"
   | "list"
-  | "symbol" | "number" | "string" | "hole";
+  | "symbol" | "number" | "string" | "boolean" | "character" | "hole";
 
 export interface OutlineEntry {
   path: number[];
@@ -188,7 +188,7 @@ export interface OutlineEntry {
   value?: string;
 }
 
-const FORM_KEYWORDS = new Set(["define", "lambda", "let", "let*", "if", "cond"]);
+const FORM_KEYWORDS = new Set(["define", "lambda", "let", "let*", "if", "cond", "quote"]);
 
 function classify(node: Node): Omit<OutlineEntry, "path"> {
   if (node.type === "atom") {

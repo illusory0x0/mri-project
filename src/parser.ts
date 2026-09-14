@@ -3,7 +3,7 @@ import { AtomTag, isNumberLiteral, ListNode, Node } from "./ast.js";
 export class ParseError extends Error {}
 
 interface Token {
-  type: "lparen" | "rparen" | "atom";
+  type: "lparen" | "rparen" | "quote" | "atom";
   tag?: AtomTag;
   value?: string;
   line: number;
@@ -66,9 +66,15 @@ function tokenize(source: string): Token[] {
       continue;
     }
 
-    if (ch === "'" || ch === "`" || ch === ",") {
+    if (ch === "'") {
+      tokens.push({ type: "quote", line, col });
+      advance();
+      continue;
+    }
+
+    if (ch === "`" || ch === ",") {
       throw new ParseError(
-        `quote/quasiquote/unquote is not supported at ${line}:${col}`
+        `backquote/unquote is not supported at ${line}:${col}`
       );
     }
 
@@ -131,6 +137,32 @@ function tokenize(source: string): Token[] {
       continue;
     }
 
+    if (ch === "#" && source[i + 1] === "\\") {
+      const startLine = line;
+      const startCol = col;
+      advance();
+      advance();
+      if (i >= n) {
+        throw new ParseError(
+          `unterminated character literal at ${startLine}:${startCol}`
+        );
+      }
+      let text = "#\\" + advance();
+      if (/[A-Za-z]/.test(text[2])) {
+        while (i < n && /[A-Za-z]/.test(source[i])) {
+          text += advance();
+        }
+      }
+      tokens.push({
+        type: "atom",
+        tag: "character",
+        value: text,
+        line: startLine,
+        col: startCol,
+      });
+      continue;
+    }
+
     const startLine = line;
     const startCol = col;
     let text = "";
@@ -142,7 +174,12 @@ function tokenize(source: string): Token[] {
         `unexpected character ${JSON.stringify(source[i])} at ${line}:${col}`
       );
     }
-    const tag: AtomTag = isNumberLiteral(text) ? "number" : "symbol";
+    const tag: AtomTag =
+      text === "#t" || text === "#f" || text === "#true" || text === "#false"
+        ? "boolean"
+        : isNumberLiteral(text)
+        ? "number"
+        : "symbol";
     tokens.push({ type: "atom", tag, value: text, line: startLine, col: startCol });
   }
 
@@ -157,6 +194,14 @@ export function parse(source: string): ListNode {
     const tok = tokens[pos];
     if (!tok) {
       throw new ParseError("unexpected end of input");
+    }
+    if (tok.type === "quote") {
+      pos++;
+      const inner = parseNode();
+      return {
+        type: "list",
+        items: [{ type: "atom", tag: "symbol", value: "quote" }, inner],
+      };
     }
     if (tok.type === "lparen") {
       pos++;

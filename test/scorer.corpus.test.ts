@@ -56,3 +56,9 @@ test("corpus: a non-terminating probe is semantically unknown", async () => {
   assert.equal(score.structural, false);
   assert.equal(score.semantic, "unknown");
 });
+
+test("corpus: canonical (quote x) matches reader shorthand 'x structurally", async () => {
+  const score = await scoreArtifact("(define (f) (quote x))", "(define (f) 'x)");
+  assert.equal(score.parsed, true);
+  assert.equal(score.structural, true);
+});

@@ -66,8 +66,8 @@ test("parse error: unclosed paren exits non-zero with no stdout", () => {
   assert.match(result.stderr, /unclosed/);
 });
 
-test("parse error: quote is rejected", () => {
-  const result = run("'x", ["outline"]);
+test("parse error: backquote is rejected", () => {
+  const result = run("`x", ["outline"]);
   assert.equal(result.code, 1);
   assert.equal(result.stdout, "");
   assert.match(result.stderr, /not supported/);

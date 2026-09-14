@@ -1,4 +1,4 @@
-export type AtomTag = "symbol" | "number" | "string";
+export type AtomTag = "symbol" | "number" | "string" | "boolean" | "character";
 
 export interface AtomNode {
   type: "atom";
