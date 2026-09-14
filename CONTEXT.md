@@ -69,7 +69,10 @@ is not itself run.
 _Avoid_: dataset, fixtures, task set
 
 **Task set**:
-A named collection of tasks that are run together.
+A named collection of tasks that are run together; every task belongs to exactly
+one. The experiment ships three: **Basic** (hand-authored synthetic edits),
+**Orthogonal** (a controlled subset of Basic that crosses `locate` and
+`construct`), and **LeetCode** (derived from the Corpus).
 _Avoid_: suite, benchmark, collection, corpus
 
 **Task**:
@@ -130,8 +133,13 @@ _Avoid_: edit depth, nesting level
 
 **Run**:
 One task × arm × driver execution, with its transcript, score, step count, and
-token count.
+token count. Repeating a run produces separate Runs that share a task, arm, and
+driver but differ in repeat index.
 _Avoid_: trial, attempt
+
+**Repeat**:
+A re-execution of the same task × arm × driver, collected to measure stability.
+_Avoid_: sample, trial, iteration
 
 **Step**:
 One conversation round in a run: a single request/response turn to the model,

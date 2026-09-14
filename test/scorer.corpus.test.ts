@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
+import path from "node:path";
 import { loadTasks } from "../eval/runner.js";
 import { scoreArtifact } from "../eval/scorer.js";
 
@@ -18,7 +19,7 @@ const WRONG: Record<string, string> = {
 
 const NON_TERMINATING = "(define (square x) (square x))";
 
-const tasks = await loadTasks();
+const tasks = await loadTasks(path.resolve(process.cwd(), "eval/tasks/basic"));
 
 for (const task of tasks) {
   test(`corpus: ${task.id} expected scores equal`, async () => {

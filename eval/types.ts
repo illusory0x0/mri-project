@@ -30,7 +30,7 @@ export interface Task {
   source?: TaskSource;
 }
 
-export type LoadedTask = Task & { depth: number };
+export type LoadedTask = Task & { depth: number; set: string };
 
 export type ArmName = "direct" | "ast-edit" | "text-edit" | "diff";
 

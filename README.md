@@ -22,23 +22,24 @@ just           # list all recipes
 The `eval/` harness runs a model against a set of **tasks** using several
 **arms** (editing strategies), then scores the results.
 
-- **Tasks** live in `eval/tasks/*.json`. Each task has an `input` program,
-  an `expected` program, an `instruction`, and two difficulty labels:
-  `locate` (`explicit` / `described`) and `construct`
-  (`atom` / `wrap` / `build` / `copy` / `multi`). A task may also carry a
-  `probe` (an expression scored semantically against both programs) and a
-  `bracketDanger` flag (its runs are reported in a separate reliability cell
-  and excluded from the headline summary). `eval/tasks-orthogonal/` is a 16-task
-  subset that crosses `locate` and `construct` (each pair shares the program and
-  differs only in the instruction) so a per-`construct` cost is not confounded
-  by `locate`; run it with `--tasks eval/tasks-orthogonal`.
-  `eval/tasks-leetcode/` is a third set authored from a corpus of real Racket
-  LeetCode solutions. Its tasks are *mutate-existing*: `expected` is the
-  original solution and `input` is the same program with one seeded edit. They
-  carry an `operation` (`replace-node` / `insert-node` / `delete-node` /
-  `wrap-node` / `move-subtree`) instead of `construct`, and a `source` object
-  recording the upstream repository, file, and commit. Run them with
-  `--tasks eval/tasks-leetcode`.
+- **Task sets** are subdirectories of `eval/tasks/`: `basic` (21 hand-authored
+  edits), `orthogonal` (a 16-task controlled subset of Basic that crosses
+  `locate` and `construct`, so a per-`construct` cost is not confounded by
+  `locate`), and `leetcode` (20 tasks derived from a corpus of real Racket
+  solutions). A task's set is the directory it lives in.
+  Each Basic / Orthogonal task has an `input` program, an `expected` program, an
+  `instruction`, and two difficulty labels: `locate` (`explicit` / `described`)
+  and `construct` (`atom` / `wrap` / `build` / `copy` / `multi`). A task may also
+  carry a `probe` (an expression scored semantically against both programs) and a
+  `bracketDanger` flag (its runs are reported in a separate reliability cell and
+  excluded from the headline summary).
+  LeetCode tasks are *mutate-existing*: `expected` is the original solution and
+  `input` is the same program with one seeded edit. They carry an `operation`
+  (`replace-node` / `insert-node` / `delete-node` / `wrap-node` / `move-subtree`)
+  instead of `construct`, and a `source` object recording the upstream
+  repository, file, and clone commit.
+  `just eval` loads every set into one results directory by default; pass
+  `--tasks eval/tasks/basic` to run a single set.
 - **Arms** live in `eval/arms/*.json`:
   - `direct` — reply with the whole program.
   - `ast-edit` — use the `lisp_editor` structural tool. Its prompt encourages
@@ -99,14 +100,9 @@ just report        # writes eval/report.html to browse runs interactively
 just summary       # writes a compact snapshot to eval/summaries/ and commits it
 ```
 
-`report` and `summary` accept `--results`, `--tasks`, `--arms`, and `--out`, so a
-non-default task set can be browsed or snapshotted by pointing them at its
-directories, e.g. the LeetCode corpus:
-
-```sh
-just report --results eval/results-leetcode --tasks eval/tasks-leetcode
-just summary --results eval/results-leetcode --tasks eval/tasks-leetcode
-```
+`report` and `summary` accept `--results`, `--tasks`, `--arms`, and `--out`.
+They default to the whole tasks tree and one results directory; pass
+`--tasks eval/tasks/<set>` to narrow to a single set.
 
 ## Acknowledgements
 

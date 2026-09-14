@@ -13,7 +13,7 @@ const OPERATIONS: OperationKind[] = [
   "move-subtree",
 ];
 
-const tasks = await loadTasks(path.resolve(process.cwd(), "eval/tasks-leetcode"));
+const tasks = await loadTasks(path.resolve(process.cwd(), "eval/tasks/leetcode"));
 
 test("corpus tasks: every task carries provenance and an operation", () => {
   assert.ok(tasks.length >= 20, `expected at least 20 tasks, got ${tasks.length}`);

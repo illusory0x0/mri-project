@@ -26,6 +26,6 @@ export function computeTargetDepth(input: string, expected: string): number {
   }
 }
 
-export function withDepth(task: Task): LoadedTask {
-  return { ...task, depth: computeTargetDepth(task.input, task.expected) };
+export function withDepth(task: Task, set = "unknown"): LoadedTask {
+  return { ...task, depth: computeTargetDepth(task.input, task.expected), set };
 }

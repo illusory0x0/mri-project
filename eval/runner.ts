@@ -255,11 +255,37 @@ export async function loadJsonDir<T>(
   );
 }
 
-export async function loadTasks(
-  dir = path.resolve(process.cwd(), "eval/tasks")
-): Promise<LoadedTask[]> {
+async function loadTaskSet(dir: string, set: string): Promise<LoadedTask[]> {
   const tasks = await loadJsonDir<Task>(dir);
-  return tasks.map(withDepth);
+  return tasks.map((task) => withDepth(task, set));
+}
+
+export async function loadTasks(
+  root = path.resolve(process.cwd(), "eval/tasks")
+): Promise<LoadedTask[]> {
+  const entries = await readdir(root, { withFileTypes: true });
+  const loaded: LoadedTask[] = [];
+
+  const topLevel = entries.filter(
+    (entry) => entry.isFile() && entry.name.endsWith(".json")
+  );
+  if (topLevel.length > 0) {
+    loaded.push(...(await loadTaskSet(root, path.basename(root))));
+  }
+
+  const sets = entries
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name)
+    .sort();
+  for (const set of sets) {
+    const setDir = path.join(root, set);
+    const names = (await readdir(setDir)).filter((name) =>
+      name.endsWith(".json")
+    );
+    if (names.length === 0) continue;
+    loaded.push(...(await loadTaskSet(setDir, set)));
+  }
+  return loaded;
 }
 
 export function loadArms(
