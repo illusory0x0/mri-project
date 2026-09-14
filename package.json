@@ -10,10 +10,13 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
+    "dotenv-cli": "^11.0.0",
     "esbuild": "^0.28.2",
     "typescript": "^5.7.0"
   },
   "pnpm": {
-    "onlyBuiltDependencies": ["esbuild"]
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
   }
 }
