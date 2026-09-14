@@ -319,6 +319,24 @@ integration tests establish the pattern future work should follow.
   temperature 1 and the `multi` saving is not robust, so the figures are
   directional; the provenance is in the committed snapshots under
   `eval/summaries/` (see ADR 0010).
+- **`locate` and `construct` interact, so the unfactored per-`construct` reading
+  was confounded.** The original task set was not crossed (`multi` was 100%
+  `explicit`; `atom`/`wrap` 100% `described`), so a per-`construct` cost could be
+  a `locate` effect. `eval/tasks-orthogonal/` adds 16 twin tasks (four constructs
+  × both locates × 2); each pair shares `input`/`expected`/`probe` and differs
+  only in the instruction, under a rubric where `explicit` names the exact target
+  or replacement and `described` refers to it by role. Run with
+  `--tasks eval/tasks-orthogonal`; `just summary --tasks eval/tasks-orthogonal`
+  writes the `(arm, construct, locate)` cell means. On
+  kimi-k2.7-code-highspeed at temperature 1, `ast-edit` tokens per cell
+  (`explicit` / `described`) were: atom 5.2k / 5.0k, wrap 7.6k / 5.2k, build
+  9.6k / 8.5k, multi 9.1k / 28.6k. The `locate` effect is strongly
+  construct-dependent (negligible for `atom`, ≈3× for `multi`), so no
+  locate-independent construct ordering survives; the earlier per-construct
+  aggregates are directional only. The `multi`-`described` cell is dominated by
+  one task (`o07-deep-let-described`, 44k tokens) and every cell has n=2, so this
+  is a directional signal, not a measured effect. Provenance is in
+  `eval/summaries/`.
 - **Future direction: a custom benchmark language.** A more stable benchmark
   would replace Racket with a purpose-built, Lisp-style ML language whose syntax
   and evaluation are fully specified, so scoring no longer depends on Racket's

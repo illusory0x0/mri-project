@@ -296,7 +296,10 @@ async function main(): Promise<void> {
   const snapshot = buildSnapshot(runs, tasks, provenance);
 
   const date = provenance.generatedAt.slice(0, 10);
-  const name = `${date}-${modelSlug(provenance.model)}-${provenance.armHash.slice(0, 8)}.json`;
+  const name =
+    `${date}-${modelSlug(provenance.model)}` +
+    `-${provenance.armHash.slice(0, 8)}` +
+    `-${provenance.taskSetHash.slice(0, 8)}.json`;
   await mkdir(outDir, { recursive: true });
   const outFile = path.join(outDir, name);
   await writeFile(outFile, JSON.stringify(snapshot, null, 2) + "\n", "utf8");
