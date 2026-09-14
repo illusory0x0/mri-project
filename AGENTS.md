@@ -32,3 +32,4 @@ Five canonical roles, default label strings. See `docs/agents/triage-labels.md`.
 ### Domain docs
 
 Single-context: `CONTEXT.md` at the root plus `docs/adr/`. See `docs/agents/domain.md`.
+For a ranked map of which docs and code are worth a slow review, see `docs/review-guide.md`.
