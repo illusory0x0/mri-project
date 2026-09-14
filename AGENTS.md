@@ -11,6 +11,14 @@ for `pnpm install`.
 - `just eval ...` / `just report` — eval harness and HTML report
 - `just` — list all recipes
 
+Eval credentials live in a git-ignored `.env` (`OPENAI_BASE_URL`,
+`OPENAI_API_KEY`); `just` auto-loads it (`set dotenv-load`) and the openai
+driver falls back to those variables, so only `--model` is required on the
+command line. Outside `just`, load it with `dotenv -e .env -- <command>`.
+
+The test suite shells out to `racket` (the scorer) and GNU `patch` (the diff
+seam); both must be on `PATH`.
+
 ## Agent skills
 
 ### Issue tracker
