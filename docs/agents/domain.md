@@ -5,10 +5,9 @@ exploring the codebase.
 
 ## Before exploring, read these
 
-- **`CONTEXT.md`** at the repo root, or
-- **`CONTEXT-MAP.md`** at the repo root if it exists: it points at one
-  `CONTEXT.md` per context. Read each one relevant to the topic.
+- **`CONTEXT.md`** at the repo root.
 - **`docs/adr/`**: read ADRs that touch the area you're about to work in.
+- **`docs/README.md`**: the documentation map, to see which doc owns what.
 
 If any of these files don't exist, **proceed silently**. Don't flag their
 absence; don't suggest creating them upfront. The `/domain-modeling` skill
