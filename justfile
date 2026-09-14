@@ -25,9 +25,11 @@ test: build
 eval *args: build
 	node dist/eval/run.js {{args}}
 
-# Build, then generate eval/report.html.
-report: build
-	node dist/eval/report.js
+# Build, then generate eval/report.html. Extra args are passed to report.js
+# (--results, --tasks, --arms, --out); point them at eval/results-leetcode and
+# eval/tasks-leetcode to browse the corpus set.
+report *args: build
+	node dist/eval/report.js {{args}}
 
 # Build, then write a compact, committable eval summary snapshot to eval/summaries/.
 summary *args: build

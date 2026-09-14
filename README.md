@@ -99,6 +99,15 @@ just report        # writes eval/report.html to browse runs interactively
 just summary       # writes a compact snapshot to eval/summaries/ and commits it
 ```
 
+`report` and `summary` accept `--results`, `--tasks`, `--arms`, and `--out`, so a
+non-default task set can be browsed or snapshotted by pointing them at its
+directories, e.g. the LeetCode corpus:
+
+```sh
+just report --results eval/results-leetcode --tasks eval/tasks-leetcode
+just summary --results eval/results-leetcode --tasks eval/tasks-leetcode
+```
+
 ## Acknowledgements
 
 The LeetCode corpus under `eval/tasks-leetcode/` is derived from
