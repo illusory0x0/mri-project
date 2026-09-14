@@ -21,7 +21,7 @@ The project is explored through an agent, so operational knowledge lives in
 | [`docs/adr/`](adr/) | both | decisions |
 | [`docs/review-guide.md`](review-guide.md) | humans | where a human should focus review |
 | [`docs/agents/`](agents/) | agents | skill conventions (issue tracker, triage labels, domain docs) |
-| [`skills/`](../skills/) | agents | staged agent skills: a mirror of `~/.agents/skills/`, pending global rollout |
+| [`.agents/skills/`](../.agents/skills/) | agents | staged agent skills: a mirror of `~/.agents/skills/`, pending global rollout |
 | [`research/`](../research/) | humans | external, point-in-time research notes |
 
 Exempt from the rule: accepted ADRs (frozen history), `.scratch/` (the issue
