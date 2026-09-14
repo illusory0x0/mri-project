@@ -115,8 +115,8 @@ Review these for correctness and consistency once Tier 1 holds.
 - **`research/structured-editing-and-ai.md`** — primary-source survey (37
   sources) grounding the project's framing. Do not re-derive it; if you need a
   claim, check it here first. The `.zh.md` file is a translation.
-- **`REFERENCES.md`** — a raw link parking lot (ProjecturEd, MoonBit,
-  ast-grep). It is a reading list, not a curated argument.
+- **`research/inspiration.md`** — a raw link list (ProjecturEd, MoonBit,
+  Future of Programming Lab). It is a reading list, not a curated argument.
 - **`.scratch/**`** — the issue workbench. Per
   [`docs/agents/issue-tracker.md`](./agents/issue-tracker.md), completed
   tickets are deliberately disposable; do not treat them as durable docs.
