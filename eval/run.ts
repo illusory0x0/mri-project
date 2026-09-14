@@ -41,7 +41,7 @@ async function main(): Promise<void> {
   const arms = options.arms
     ? allArms.filter((arm) => options.arms!.includes(arm.name))
     : allArms;
-  const tasks = selectTasks(await loadTasks(), options.tasks);
+  const tasks = selectTasks(await loadTasks(options.tasksDir), options.tasks);
 
   await mkdir(options.out, { recursive: true });
 

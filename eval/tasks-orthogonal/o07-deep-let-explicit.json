@@ -1,0 +1,8 @@
+{
+  "id": "o07-deep-let-explicit",
+  "locate": "explicit",
+  "construct": "multi",
+  "instruction": "In the innermost body of g, change (+ a (+ b c)) to (+ c (+ b a)).",
+  "input": "(define (g x) (let ((a (+ x 1))) (let ((b (* a 2))) (let ((c (- b 3))) (+ a (+ b c))))))",
+  "expected": "(define (g x) (let ((a (+ x 1))) (let ((b (* a 2))) (let ((c (- b 3))) (+ c (+ b a))))))"
+}

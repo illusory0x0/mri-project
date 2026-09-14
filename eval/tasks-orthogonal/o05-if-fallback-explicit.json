@@ -1,0 +1,8 @@
+{
+  "id": "o05-if-fallback-explicit",
+  "locate": "explicit",
+  "construct": "build",
+  "instruction": "Replace the body n of f with (if (< n 0) 0 n).",
+  "input": "(define (f n) n)",
+  "expected": "(define (f n) (if (< n 0) 0 n))"
+}

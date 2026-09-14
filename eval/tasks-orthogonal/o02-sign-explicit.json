@@ -1,0 +1,8 @@
+{
+  "id": "o02-sign-explicit",
+  "locate": "explicit",
+  "construct": "atom",
+  "instruction": "In (define (sign n) (if (< n 0) -1 (if (= n 0) 0 (if (> n 0) 1 0)))), change the else-branch literal 0 of the innermost if to n.",
+  "input": "(define (sign n) (if (< n 0) -1 (if (= n 0) 0 (if (> n 0) 1 0))))",
+  "expected": "(define (sign n) (if (< n 0) -1 (if (= n 0) 0 (if (> n 0) 1 n))))"
+}

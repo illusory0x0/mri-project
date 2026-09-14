@@ -5,6 +5,7 @@ export interface Options {
   driver: "mock" | "openai";
   arms?: ArmName[];
   tasks?: string[];
+  tasksDir?: string;
   out: string;
   model: string;
   baseUrl: string;
@@ -20,6 +21,7 @@ Options:
   --driver <mock|openai>  Agent driver (default: mock)
   --arm <name>            Run only this arm (repeatable)
   --task <id>             Run only this task by exact id (repeatable)
+  --tasks <dir>           Tasks directory (default: eval/tasks)
   --out <dir>             Output directory (default: eval/results)
   --model <name>          Model name (openai; env OPENAI_MODEL)
   --base-url <url>        API base URL (openai; env OPENAI_BASE_URL)
@@ -59,6 +61,9 @@ export function parseArgs(argv: string[]): Options {
         break;
       case "--task":
         tasks.push(value());
+        break;
+      case "--tasks":
+        options.tasksDir = path.resolve(value());
         break;
       case "--out":
         options.out = path.resolve(value());

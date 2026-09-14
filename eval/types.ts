@@ -164,6 +164,10 @@ export interface ConstructSummary {
   totalTokens: number;
 }
 
+export interface CellSummary extends ConstructSummary {
+  locate: LocateDifficulty;
+}
+
 export interface BatchingStat {
   arm: ArmName;
   assistantTurns: number;
@@ -192,6 +196,7 @@ export interface SummarySnapshot {
   headline: ArmSummary[];
   bracketDanger: BracketDangerCell;
   perConstruct: ConstructSummary[];
+  cells: CellSummary[];
   batching: BatchingStat[];
   runs: SummaryRunRow[];
 }

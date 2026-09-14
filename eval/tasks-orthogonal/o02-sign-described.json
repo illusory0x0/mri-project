@@ -1,0 +1,8 @@
+{
+  "id": "o02-sign-described",
+  "locate": "described",
+  "construct": "atom",
+  "instruction": "In sign, change the final fallback branch to return n instead of 0.",
+  "input": "(define (sign n) (if (< n 0) -1 (if (= n 0) 0 (if (> n 0) 1 0))))",
+  "expected": "(define (sign n) (if (< n 0) -1 (if (= n 0) 0 (if (> n 0) 1 n))))"
+}

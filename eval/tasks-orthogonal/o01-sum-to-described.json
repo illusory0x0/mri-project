@@ -1,0 +1,8 @@
+{
+  "id": "o01-sum-to-described",
+  "locate": "described",
+  "construct": "atom",
+  "instruction": "Change the base case of sum-to to return 1 instead of 0.",
+  "input": "(define (sum-to n) (if (= n 0) 0 (+ n (sum-to (- n 1)))))",
+  "expected": "(define (sum-to n) (if (= n 0) 1 (+ n (sum-to (- n 1)))))"
+}

@@ -1,0 +1,8 @@
+{
+  "id": "o04-lambda-map-explicit",
+  "locate": "explicit",
+  "construct": "wrap",
+  "instruction": "Replace the body x of (lambda (x) x) with (+ x 1).",
+  "input": "(define (inc-all xs) (map (lambda (x) x) xs))",
+  "expected": "(define (inc-all xs) (map (lambda (x) (+ x 1)) xs))"
+}

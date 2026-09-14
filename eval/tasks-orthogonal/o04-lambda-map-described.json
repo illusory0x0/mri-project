@@ -1,0 +1,8 @@
+{
+  "id": "o04-lambda-map-described",
+  "locate": "described",
+  "construct": "wrap",
+  "instruction": "Make the lambda increment its argument by 1.",
+  "input": "(define (inc-all xs) (map (lambda (x) x) xs))",
+  "expected": "(define (inc-all xs) (map (lambda (x) (+ x 1)) xs))"
+}

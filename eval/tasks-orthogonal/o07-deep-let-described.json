@@ -1,0 +1,8 @@
+{
+  "id": "o07-deep-let-described",
+  "locate": "described",
+  "construct": "multi",
+  "instruction": "In g, reorder the innermost sum so it adds c first, then b, then a.",
+  "input": "(define (g x) (let ((a (+ x 1))) (let ((b (* a 2))) (let ((c (- b 3))) (+ a (+ b c))))))",
+  "expected": "(define (g x) (let ((a (+ x 1))) (let ((b (* a 2))) (let ((c (- b 3))) (+ c (+ b a))))))"
+}

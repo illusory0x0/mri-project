@@ -12,8 +12,10 @@ import {
 import {
   ArmName,
   BatchingStat,
+  CellSummary,
   ConstructKind,
   ConstructSummary,
+  LocateDifficulty,
   RunResult,
   SummaryProvenance,
   SummaryRunRow,
@@ -198,6 +200,8 @@ export function buildSnapshot(
 ): SummarySnapshot {
   const tasksById = new Map(tasks.map((task) => [task.id, task]));
   const perConstruct: ConstructSummary[] = [];
+  const cells: CellSummary[] = [];
+  const LOCATES: LocateDifficulty[] = ["explicit", "described"];
   for (const arm of ARM_ORDER) {
     for (const construct of CONSTRUCT_ORDER) {
       const results = runs.filter(
@@ -208,6 +212,17 @@ export function buildSnapshot(
       if (results.length > 0) {
         perConstruct.push(summarizeConstruct(arm, construct, results));
       }
+      for (const locate of LOCATES) {
+        const cellRuns = results.filter(
+          (run) => (tasksById.get(run.taskId)?.locate ?? "explicit") === locate
+        );
+        if (cellRuns.length > 0) {
+          cells.push({
+            ...summarizeConstruct(arm, construct, cellRuns),
+            locate,
+          });
+        }
+      }
     }
   }
 
@@ -216,6 +231,7 @@ export function buildSnapshot(
     headline: summarizeHeadline(runs, tasks),
     bracketDanger: summarizeBracketDanger(runs, tasks),
     perConstruct,
+    cells,
     batching: computeBatching(runs),
     runs: runRows(runs, tasksById),
   };

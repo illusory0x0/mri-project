@@ -1,0 +1,8 @@
+{
+  "id": "o05-if-fallback-described",
+  "locate": "described",
+  "construct": "build",
+  "instruction": "Return 0 when n is negative, using the condition (< n 0); otherwise return n.",
+  "input": "(define (f n) n)",
+  "expected": "(define (f n) (if (< n 0) 0 n))"
+}

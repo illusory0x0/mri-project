@@ -1,0 +1,8 @@
+{
+  "id": "o06-return-lambda-described",
+  "locate": "described",
+  "construct": "build",
+  "instruction": "Make f return a lambda with parameter y whose body is (+ y x).",
+  "input": "(define (f x) x)",
+  "expected": "(define (f x) (lambda (y) (+ y x)))"
+}

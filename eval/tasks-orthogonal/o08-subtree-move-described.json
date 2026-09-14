@@ -1,0 +1,9 @@
+{
+  "id": "o08-subtree-move-described",
+  "locate": "described",
+  "construct": "multi",
+  "instruction": "In f, move the constant term to the front of the addition.",
+  "input": "(define (f x) (+ (* x 2) 3))",
+  "expected": "(define (f x) (+ 3 (* x 2)))",
+  "probe": "(f 2)"
+}

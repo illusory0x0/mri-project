@@ -1,0 +1,9 @@
+{
+  "id": "o08-subtree-move-explicit",
+  "locate": "explicit",
+  "construct": "multi",
+  "instruction": "Move the 3 to the front of the sum so the body becomes (+ 3 (* x 2)), without retyping it.",
+  "input": "(define (f x) (+ (* x 2) 3))",
+  "expected": "(define (f x) (+ 3 (* x 2)))",
+  "probe": "(f 2)"
+}

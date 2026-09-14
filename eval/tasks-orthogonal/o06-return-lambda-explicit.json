@@ -1,0 +1,8 @@
+{
+  "id": "o06-return-lambda-explicit",
+  "locate": "explicit",
+  "construct": "build",
+  "instruction": "Replace the body x of f with (lambda (y) (+ y x)).",
+  "input": "(define (f x) x)",
+  "expected": "(define (f x) (lambda (y) (+ y x)))"
+}

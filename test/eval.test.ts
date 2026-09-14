@@ -855,6 +855,15 @@ test("summary: builds per-construct totals, batching rate, and hides danger task
   assert.equal(build.totalTokens, 300);
   assert.equal(build.meanTokens, 300);
 
+  const wrapCell = snapshot.cells.find(
+    (cell) =>
+      cell.arm === "ast-edit" &&
+      cell.construct === "wrap" &&
+      cell.locate === "described"
+  )!;
+  assert.equal(wrapCell.runs, 1);
+  assert.equal(wrapCell.totalTokens, 100);
+
   const batching = snapshot.batching.find((stat) => stat.arm === "ast-edit")!;
   assert.equal(batching.assistantTurns, 6);
   assert.equal(batching.toolTurns, 4);
