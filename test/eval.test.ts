@@ -7,10 +7,10 @@ import { MockDriver } from "../eval/drivers/mock.js";
 import { applyEnvFallbacks, parseArgs } from "../eval/options.js";
 import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
-import { loadTasks, mapLimit, runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
+import { loadTasks, mapLimit, resultFileName, runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
 import { headlineNote } from "../eval/report.notes.js";
 import { scoreArtifact } from "../eval/scorer.js";
-import { buildSnapshot, collectProvenance } from "../eval/summary.js";
+import { buildSnapshot, collectProvenance, computeStability } from "../eval/summary.js";
 import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
 const directArm: Arm = { name: "direct", systemPrompt: "test", tools: [] };
@@ -1048,4 +1048,60 @@ test("summary: per-set aggregates keep task sets separate", () => {
   assert.ok(snapshot.perConstruct.every((row) => row.set === "basic"));
   assert.ok(snapshot.perOperation.every((row) => row.set === "leetcode"));
   assert.equal(snapshot.runs.find((row) => row.taskId === "b1")!.set, "basic");
+});
+
+test("options: --repeats parses a positive integer and defaults to one", () => {
+  assert.equal(parseArgs(["--repeats", "3"]).repeats, 3);
+  assert.equal(parseArgs([]).repeats, 1);
+  assert.throws(() => parseArgs(["--repeats", "0"]));
+});
+
+test("run artifacts: names encode repeats only when repeating", () => {
+  assert.equal(resultFileName("ast-edit", "t01", 1, 1), "ast-edit-t01.json");
+  assert.equal(
+    resultFileName("ast-edit", "t01", 3, 2),
+    "ast-edit-t01-r2.json"
+  );
+});
+
+test("stability: agreement is the modal verdict share", () => {
+  const base: RunResult = {
+    taskId: "b1",
+    arm: "ast-edit",
+    driver: "mock",
+    parsed: true,
+    parenMismatch: false,
+    hunkFailure: false,
+    ioViolation: false,
+    evaluates: true,
+    success: true,
+    structural: true,
+    semantic: null,
+    depth: 0,
+    parseError: null,
+    steps: 1,
+    tokens: 10,
+    finalArtifact: "",
+    transcript: [],
+  };
+  const task: Task = {
+    id: "b1",
+    locate: "explicit",
+    construct: "atom",
+    set: "basic",
+    instruction: "",
+    input: "",
+    expected: "",
+  };
+  const runs: RunResult[] = [
+    { ...base, repeat: 1 },
+    { ...base, repeat: 2 },
+    { ...base, repeat: 3, success: false, structural: false },
+  ];
+  const stability = computeStability(runs, [task]);
+  const row = stability.find(
+    (item) => item.set === "basic" && item.arm === "ast-edit"
+  )!;
+  assert.equal(row.tasks, 1);
+  assert.ok(Math.abs(row.meanAgreement - 2 / 3) < 1e-9);
 });

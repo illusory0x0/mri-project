@@ -13,6 +13,7 @@ export interface Options {
   temperature: number;
   timeoutMs: number;
   concurrency: number;
+  repeats: number;
 }
 
 export const USAGE = `Usage: node dist/eval/run.js [options]
@@ -29,6 +30,7 @@ Options:
   --temperature <n>       Sampling temperature (default: 0)
   --timeout <seconds>     Per-run timeout in seconds (default: 180)
   --concurrency <n>       Max runs in flight (default: 4)
+  --repeats <n>           Run each task x arm n times for stability (default: 1)
   -h, --help              Show this help
 `;
 
@@ -42,6 +44,7 @@ export function parseArgs(argv: string[]): Options {
     temperature: 0,
     timeoutMs: 180_000,
     concurrency: 4,
+    repeats: 1,
   };
   const arms: ArmName[] = [];
   const tasks: string[] = [];
@@ -96,6 +99,14 @@ export function parseArgs(argv: string[]): Options {
           );
         }
         options.concurrency = width;
+        break;
+      }
+      case "--repeats": {
+        const count = Number(value());
+        if (!Number.isInteger(count) || count <= 0) {
+          throw new Error(`invalid --repeats: expected a positive integer`);
+        }
+        options.repeats = count;
         break;
       }
       default:

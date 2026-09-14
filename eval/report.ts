@@ -9,6 +9,7 @@ import {
   summarizeBySet,
   summarizeHeadline,
 } from "./runner.js";
+import { computeStability } from "./summary.js";
 import { TOOL_SPECS } from "./tools.js";
 import { ARM_NAMES, LoadedTask, ReportData, RunResult } from "./types.js";
 
@@ -247,6 +248,7 @@ async function main(): Promise<void> {
     runs,
     summary: summarizeHeadline(runs, allTasks),
     perSet: summarizeBySet(runs, allTasks),
+    stability: computeStability(runs, allTasks),
     bracketDanger: summarizeBracketDanger(runs, allTasks),
   };
 

@@ -10,6 +10,7 @@ import {
   AgentDriver,
   Arm,
   ARM_NAMES,
+  ArmName,
   ArmSummary,
   BracketDangerCell,
   DriverResult,
@@ -91,6 +92,18 @@ export function buildToolContext(
 
 export interface RunMeta {
   timeoutMs?: number;
+  repeat?: number;
+}
+
+export function resultFileName(
+  arm: ArmName,
+  taskId: string,
+  repeats: number,
+  repeat: number
+): string {
+  return repeats > 1
+    ? `${arm}-${taskId}-r${repeat}.json`
+    : `${arm}-${taskId}.json`;
 }
 
 export async function mapLimit<T, R>(
@@ -121,6 +134,7 @@ export async function runOne(
 ): Promise<RunResult> {
   const workspace: Workspace = { source: task.input };
   const { depth } = withDepth(task);
+  const repeat = meta.repeat ?? 1;
   const { model, temperature } = driver.config(arm);
   const timeoutMs = meta.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
@@ -166,6 +180,7 @@ export async function runOne(
       driver: driver.id,
       model,
       temperature,
+      repeat,
       parsed: false,
       parenMismatch: false,
       hunkFailure: false,
@@ -224,6 +239,7 @@ export async function runOne(
     driver: driver.id,
     model,
     temperature,
+    repeat,
     parsed: score.parsed,
     parenMismatch: score.parenMismatch,
     hunkFailure: false,

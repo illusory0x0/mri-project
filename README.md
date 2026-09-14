@@ -74,6 +74,9 @@ to those variables, so only the model is required on the command line:
 just eval --driver openai --model linda/kimi-k2.7-code-highspeed
 ```
 
+Add `--repeats N` to run each task × arm N times; each repeat is a separate
+artifact and the report then shows agreement across repeats.
+
 Explicit `--base-url` / `--api-key` / `--model` flags override the environment;
 `OPENAI_MODEL` is also honoured. To run a command with the same environment
 outside `just`, use `dotenv -e .env -- <command>`.

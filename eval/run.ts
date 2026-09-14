@@ -7,6 +7,7 @@ import {
   loadArms,
   loadTasks,
   mapLimit,
+  resultFileName,
   runOne,
   selectTasks,
   summarizeBracketDanger,
@@ -45,21 +46,34 @@ async function main(): Promise<void> {
 
   await mkdir(options.out, { recursive: true });
 
-  const jobs = arms.flatMap((arm) => tasks.map((task) => ({ arm, task })));
+  const repeats = Array.from(
+    { length: options.repeats },
+    (_unused, index) => index + 1
+  );
+  const jobs = arms.flatMap((arm) =>
+    tasks.flatMap((task) => repeats.map((repeat) => ({ arm, task, repeat })))
+  );
   const results = await mapLimit(
     jobs,
     options.concurrency,
-    async ({ arm, task }) => {
+    async ({ arm, task, repeat }) => {
       const result = await runOne(driver, arm, task, {
         timeoutMs: options.timeoutMs,
+        repeat,
       });
-      const name = `${arm.name}-${task.id}.json`;
+      const name = resultFileName(
+        arm.name,
+        task.id,
+        options.repeats,
+        repeat
+      );
       await writeFile(
         path.join(options.out, name),
         JSON.stringify(result, null, 2)
       );
+      const tag = options.repeats > 1 ? ` r${repeat}` : "";
       process.stdout.write(
-        `${arm.name} ${task.id} success=${result.success} parsed=${result.parsed}\n`
+        `${arm.name} ${task.id}${tag} success=${result.success} parsed=${result.parsed}\n`
       );
       return result;
     }

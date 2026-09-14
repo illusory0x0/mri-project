@@ -322,12 +322,12 @@ integration tests establish the pattern future work should follow.
 - **`locate` and `construct` interact, so the unfactored per-`construct` reading
   was confounded.** The original task set was not crossed (`multi` was 100%
   `explicit`; `atom`/`wrap` 100% `described`), so a per-`construct` cost could be
-  a `locate` effect. `eval/tasks-orthogonal/` adds 16 twin tasks (four constructs
-  × both locates × 2); each pair shares `input`/`expected`/`probe` and differs
-  only in the instruction, under a rubric where `explicit` names the exact target
-  or replacement and `described` refers to it by role. Run with
-  `--tasks eval/tasks-orthogonal`; `just summary --tasks eval/tasks-orthogonal`
-  writes the `(arm, construct, locate)` cell means. On
+  a `locate` effect. The Orthogonal set (`eval/tasks/orthogonal/`) adds 16 twin
+  tasks (four constructs × both locates × 2); each pair shares
+  `input`/`expected`/`probe` and differs only in the instruction, under a rubric
+  where `explicit` names the exact target or replacement and `described` refers
+  to it by role. Run with `--tasks eval/tasks/orthogonal`; `just summary --tasks
+  eval/tasks/orthogonal` writes the `(arm, construct, locate)` cell means. On
   kimi-k2.7-code-highspeed at temperature 1, `ast-edit` tokens per cell
   (`explicit` / `described`) were: atom 5.2k / 5.0k, wrap 7.6k / 5.2k, build
   9.6k / 8.5k, multi 9.1k / 28.6k. The `locate` effect is strongly

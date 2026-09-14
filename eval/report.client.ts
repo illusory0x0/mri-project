@@ -125,6 +125,23 @@ function scoreCell(value: number, total: number): string {
   return '<span class="score ' + cls + '">' + numerator + "/" + total + "</span>";
 }
 
+function agreementOf(runs: RunResult[]): { ok: boolean; n: number; total: number } {
+  const counts: Record<string, number> = {};
+  runs.forEach(function (r) {
+    const sig = [r.parsed, r.structural, r.success, r.semantic].join("|");
+    counts[sig] = (counts[sig] || 0) + 1;
+  });
+  let modal = "";
+  let best = -1;
+  Object.keys(counts).forEach(function (sig) {
+    if (counts[sig] > best) {
+      best = counts[sig];
+      modal = sig;
+    }
+  });
+  return { ok: modal.split("|")[2] === "true", n: best, total: runs.length };
+}
+
 function renderStats(): void {
   const bits: string[] = [];
   bits.push(DATA.runs.length + " 次运行");
@@ -176,6 +193,33 @@ function renderSummary(): void {
       "</h3>" +
       summaryTable(rows);
   });
+  const repeated = DATA.runs.some(function (r) {
+    return (r.repeat ?? 1) > 1;
+  });
+  if (repeated && DATA.stability.length > 0) {
+    html +=
+      '<h3 style="margin-top:18px">稳定性 · 重复一致率</h3>' +
+      '<table class="grid"><thead><tr><th>任务集</th><th>编辑方式</th>' +
+      '<th class="num">任务数</th><th class="num">平均一致率</th></tr></thead><tbody>';
+    DATA.stability.forEach(function (row) {
+      const c = armColor(row.arm);
+      html +=
+        "<tr><td>" +
+        esc(row.set) +
+        '</td><td class="armname" style="color:' +
+        c +
+        '">' +
+        esc(armLabel(row.arm)) +
+        "</td>" +
+        '<td class="num">' +
+        row.tasks +
+        "</td>" +
+        '<td class="num">' +
+        (row.meanAgreement * 100).toFixed(0) +
+        "%</td></tr>";
+    });
+    html += "</tbody></table>";
+  }
   document.getElementById("summary")!.innerHTML = html;
 }
 
@@ -274,12 +318,17 @@ function renderMatrix(): void {
         return;
       }
       const r = cellRuns[0];
+      const agg = cellRuns.length > 1 ? agreementOf(cellRuns) : null;
+      const ok = agg ? agg.ok : r.success;
+      const agreement = agg
+        ? ' <span class="ratio">' + agg.n + "/" + agg.total + "</span>"
+        : "";
       const ratio = baseTok > 0 ? '<span class="ratio">×' + (r.tokens / baseTok).toFixed(1) + "</span>" : "";
       html +=
-        '<td><button class="cell ' + (r.success ? "ok" : "bad") + '"' +
+        '<td><button class="cell ' + (ok ? "ok" : "bad") + '"' +
         ' data-task="' + esc(task.id) + '" data-arm="' + esc(a) + '">' +
-        '<span class="mark">' + (r.success ? "✓" : "✗") + "</span>" +
-        '<span class="mini">' + r.steps + " 回合 · " + r.tokens.toLocaleString() + " tok " + ratio + "</span>" +
+        '<span class="mark">' + (ok ? "✓" : "✗") + "</span>" +
+        '<span class="mini">' + r.steps + " 回合 · " + r.tokens.toLocaleString() + " tok " + ratio + agreement + "</span>" +
         "</button></td>";
     });
     html += "</tr>";

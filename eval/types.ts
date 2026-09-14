@@ -94,6 +94,7 @@ export interface RunResult {
   driver: DriverIdentity;
   model?: string;
   temperature?: number;
+  repeat?: number;
   parsed: boolean;
   parenMismatch: boolean;
   hunkFailure: boolean;
@@ -152,6 +153,7 @@ export interface ReportData {
   runs: RunResult[];
   summary: ArmSummary[];
   perSet: SetSummary[];
+  stability: StabilitySummary[];
   bracketDanger: BracketDangerCell;
 }
 
@@ -176,6 +178,13 @@ export interface SummaryProvenance {
 
 export interface SetSummary extends ArmSummary {
   set: string;
+}
+
+export interface StabilitySummary {
+  set: string;
+  arm: ArmName;
+  tasks: number;
+  meanAgreement: number;
 }
 
 export interface ConstructSummary {
@@ -243,6 +252,7 @@ export interface SummarySnapshot {
   perConstruct: ConstructSummary[];
   perOperation: OperationSummary[];
   cells: CellSummary[];
+  stability: StabilitySummary[];
   batching: BatchingStat[];
   runs: SummaryRunRow[];
 }

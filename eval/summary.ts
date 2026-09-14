@@ -21,6 +21,7 @@ import {
   OperationSummary,
   RunResult,
   SetSummary,
+  StabilitySummary,
   SummaryProvenance,
   SummaryRunRow,
   SummarySnapshot,
@@ -223,6 +224,56 @@ function summarizeOperation(
   return { arm, set, operation, ...summarizeRuns(arm, results) };
 }
 
+function verdictSignature(run: RunResult): string {
+  return [run.parsed, run.structural, run.success, run.semantic].join("|");
+}
+
+export function computeStability(
+  runs: RunResult[],
+  tasks: Task[]
+): StabilitySummary[] {
+  const setOf = new Map(tasks.map((task) => [task.id, task.set ?? "unknown"]));
+  const groups = new Map<string, RunResult[]>();
+  for (const run of runs) {
+    const key = `${run.taskId}|${run.arm}`;
+    const list = groups.get(key);
+    if (list) list.push(run);
+    else groups.set(key, [run]);
+  }
+  const acc = new Map<
+    string,
+    { set: string; arm: ArmName; total: number; count: number }
+  >();
+  for (const [key, group] of groups) {
+    const separator = key.lastIndexOf("|");
+    const taskId = key.slice(0, separator);
+    const arm = key.slice(separator + 1) as ArmName;
+    const set = setOf.get(taskId) ?? "unknown";
+    const counts = new Map<string, number>();
+    for (const run of group) {
+      const signature = verdictSignature(run);
+      counts.set(signature, (counts.get(signature) ?? 0) + 1);
+    }
+    const modal = Math.max(...counts.values());
+    const agreement = group.length === 0 ? 0 : modal / group.length;
+    const groupKey = `${set}|${arm}`;
+    const entry = acc.get(groupKey) ?? { set, arm, total: 0, count: 0 };
+    entry.total += agreement;
+    entry.count += 1;
+    acc.set(groupKey, entry);
+  }
+  return [...acc.values()]
+    .map((entry) => ({
+      set: entry.set,
+      arm: entry.arm,
+      tasks: entry.count,
+      meanAgreement: entry.count === 0 ? 0 : entry.total / entry.count,
+    }))
+    .sort(
+      (a, b) => a.set.localeCompare(b.set) || a.arm.localeCompare(b.arm)
+    );
+}
+
 function runRows(
   runs: RunResult[],
   tasksById: Map<string, Task>
@@ -307,6 +358,7 @@ export function buildSnapshot(
     perConstruct,
     perOperation,
     cells,
+    stability: computeStability(runs, tasks),
     batching: computeBatching(runs),
     runs: runRows(runs, tasksById),
   };
@@ -368,6 +420,13 @@ async function main(): Promise<void> {
     arms: armsDir,
     tasks: tasksDir,
   });
+  const setOf = new Map(tasks.map((task) => [task.id, task.set ?? "unknown"]));
+  const presentSets = new Set(
+    runs.map((run) => setOf.get(run.taskId) ?? "unknown")
+  );
+  provenance.taskSets = provenance.taskSets.filter((set) =>
+    presentSets.has(set.name)
+  );
   const snapshot = buildSnapshot(runs, tasks, provenance);
 
   const date = provenance.generatedAt.slice(0, 10);
