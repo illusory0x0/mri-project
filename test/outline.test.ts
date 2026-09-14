@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { find, outline, run } from "./helpers.js";
+import { find, ok, outline, run } from "./helpers.js";
 
 test("outline: classifies nodes by semantic kind", () => {
   const entries = outline("(define (f x) x)");
@@ -42,6 +42,15 @@ test("outline: accepts the supported subset forms", () => {
   ].join("\n");
   const result = run(source, ["outline"]);
   assert.equal(result.code, 0, result.stderr);
+});
+
+test("outline: v2 shapes classify as their own kind", () => {
+  const kindOf = (shape: string): string | undefined =>
+    find(outline(ok("(a)", ["replace", shape, "--out", "[0]"])), [0])?.kind;
+  assert.equal(kindOf("define-fn"), "define");
+  assert.equal(kindOf("let*"), "let*");
+  assert.equal(kindOf("cond"), "cond");
+  assert.equal(kindOf("list"), "list");
 });
 
 test("outline: empty input yields only the root", () => {

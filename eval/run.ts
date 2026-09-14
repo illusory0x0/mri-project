@@ -51,8 +51,6 @@ async function main(): Promise<void> {
     options.concurrency,
     async ({ arm, task }) => {
       const result = await runOne(driver, arm, task, {
-        model: options.model || undefined,
-        temperature: options.temperature,
         timeoutMs: options.timeoutMs,
       });
       const name = `${arm.name}-${task.id}.json`;

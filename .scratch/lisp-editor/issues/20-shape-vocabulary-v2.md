@@ -5,9 +5,9 @@ next revision of the `lisp-editor` shape vocabulary. `docs/spec.md` deferred thi
 review "until the first experiment data exists"; it now does (kimi-k2.7-code-highspeed
 and qwen3.5-35b-a3b runs).
 
-**Blocked by:** None
+**Blocked by:** Re-run needs model API access (cost/expressiveness comparison)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
 ## Evidence from the first real-model runs
 
@@ -31,15 +31,26 @@ and qwen3.5-35b-a3b runs).
 
 ## Tasks
 
-- [ ] Decide which shapes to add: `cond`, `let*`, `list`, and/or a
-      function-`define` (`define-fn`) shape.
-- [ ] Decide whether to add an atomic `wrap`/transform verb, versus keeping the
-      one-node-per-call model and documenting the copy-before-overwrite order.
-- [ ] Weigh both against the experiment premise that the vocabulary itself is the
-      variable under test (`docs/spec.md`, "headline metric is effort and
-      expressiveness").
-- [ ] If adopted: implement in `src/ops.ts`, update the shape catalogue in
-      `eval/tools.ts` and `docs/spec.md`, and re-run to compare cost and
-      expressiveness.
+- [x] Decide which shapes to add: **adopt all four** — `cond`, `let*`, `list`,
+      and `define-fn`. Each closes a gap where `outline` already classified a
+      construct no shape could build (or, for `define-fn`, where the canonical
+      function header could not be built).
+- [x] Decide whether to add an atomic `wrap`/transform verb: **no** — keep the
+      one-node-per-call model and document the copy-before-overwrite order in
+      `eval/tools.ts` and `docs/spec.md`.
+- [x] Weigh both against the experiment premise that the vocabulary itself is the
+      variable under test: recorded in `docs/spec.md` ("Vocabulary v2 adopted").
+- [x] Implemented the four shapes in `src/ops.ts`; updated the catalogue in
+      `eval/tools.ts` and `docs/spec.md`; covered by `test/replace.test.ts` and
+      `test/outline.test.ts`.
+- [ ] **Pending:** re-run the experiment to compare cost and expressiveness
+      against v1 (needs model API access).
 - [ ] Consider splitting the report cost summary by `construct` (deferred
       decision; evidence above).
+
+## Comments
+
+Vocabulary v2 was adopted without re-arguing the experiment premise: the added
+shapes are constructor gaps, not a change to how effort is measured, so v2 runs
+can be compared against the recorded v1 runs per `construct`. The atomic-`wrap`
+question is settled as "no" for now. The only outstanding work is the re-run.

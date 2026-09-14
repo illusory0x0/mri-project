@@ -18,6 +18,22 @@ test("replace: every v1 shape produces its skeleton", () => {
   assert.equal(ok("(a)", ["replace", "hole", "--out", "[0]"]), "_\n");
 });
 
+test("replace: every v2 shape produces its skeleton", () => {
+  assert.equal(
+    ok("(a)", ["replace", "define-fn", "--out", "[0]"]),
+    "(define (_name _param) _body)\n"
+  );
+  assert.equal(
+    ok("(a)", ["replace", "let*", "--out", "[0]"]),
+    "(let* ((_name _value)) _body)\n"
+  );
+  assert.equal(
+    ok("(a)", ["replace", "cond", "--out", "[0]"]),
+    "(cond (_test1 _body1) (_test2 _body2))\n"
+  );
+  assert.equal(ok("(a)", ["replace", "list", "--out", "[0]"]), "(_item1 _item2)\n");
+});
+
 test("replace: apply:<n> builds an n-argument application skeleton", () => {
   assert.equal(
     ok("(a)", ["replace", "apply:2", "--out", "[0]"]),

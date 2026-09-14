@@ -106,6 +106,13 @@ _Avoid_: timeout, failure
 The agent backend that runs an arm against a task.
 _Avoid_: model, client, runner
 
+**Target depth**:
+The nesting depth a task's edit targets: the depth of the first node where the
+input and expected programs diverge. When the edit changes a list's child count
+(an insert or a delete) the divergence is reported at the containing list's
+depth — one less than the added or removed node's depth.
+_Avoid_: edit depth, nesting level
+
 **Run**:
 One task × arm × driver execution, with its transcript, score, step count, and
 token count.

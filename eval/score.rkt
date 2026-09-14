@@ -8,6 +8,32 @@
 
 (define BUDGET-SECONDS 2)
 
+; Detection-only I/O guard. Scored programs run in a base namespace where the
+; obvious filesystem, process, network, and environment bindings are replaced by
+; procedures that raise a marked error. This is not a real sandbox: a candidate
+; that reaches the underlying primitives another way (e.g. `require`) can still
+; perform I/O. See docs/adr/0009-scored-programs-no-io-guard.md.
+(define IO-GUARD-MARK "io-guard:blocked:")
+
+(define (guarded-names)
+  '(open-input-file open-output-file open-input-bytes open-output-bytes
+    call-with-input-file call-with-output-file
+    with-input-from-file with-output-to-file
+    delete-file rename-file-or-directory make-directory directory-list
+    file->string file->bytes file->lines file->list file->value
+    system subprocess shell-execute
+    tcp-connect tcp-listen tcp-accept tcp-abandon-port
+    udp-open-socket udp-send-to udp-receive!
+    getenv putenv dynamic-require))
+
+(define (install-io-guards! namespace)
+  (eval `(define (io-guard-block! name)
+           (raise (exn:fail (string-append ,IO-GUARD-MARK (symbol->string name))
+                            (current-continuation-marks))))
+         namespace)
+  (for ([name (in-list (guarded-names))])
+    (eval `(define ,name (lambda args (io-guard-block! ',name))) namespace)))
+
 (define (strip-lang text)
   (define match (regexp-match #rx"^#lang[^\n]*\n?" text))
   (if match
@@ -36,9 +62,10 @@
   (with-handlers ([exn:fail?
                    (lambda (e)
                      (define message (exn-message e))
-                     (if (regexp-match? #rx"out of time" message)
-                         (cons 'unknown #f)
-                         (cons 'error message)))])
+                     (cond
+                       [(regexp-match? #rx"out of time" message) (cons 'unknown #f)]
+                       [(regexp-match? #rx"io-guard:blocked:" message) (cons 'io-violation message)]
+                       [else (cons 'error message)]))])
     (call-with-limits BUDGET-SECONDS 100000000000
       (lambda () (cons 'ok (thunk))))))
 
@@ -47,13 +74,21 @@
     (bounded
      (lambda ()
        (define namespace (make-base-namespace))
+       (install-io-guards! namespace)
        (for-each (lambda (datum) (eval datum namespace)) datums)
        namespace)))
-  (if (eq? (car program) 'ok)
-      (hasheq 'evaluates #t
-              'probe (and probe (bounded (lambda () (eval probe (cdr program))))))
-      (hasheq 'evaluates #f
-              'probe (and probe program))))
+  (cond
+    [(eq? (car program) 'ok)
+     (define probe-result (and probe (bounded (lambda () (eval probe (cdr program))))))
+     (hasheq 'evaluates #t
+             'probe probe-result
+             'ioViolation (and probe-result
+                               (pair? probe-result)
+                               (eq? (car probe-result) 'io-violation)))]
+    [(eq? (car program) 'io-violation)
+     (hasheq 'evaluates #f 'probe program 'ioViolation #t)]
+    [else
+     (hasheq 'evaluates #f 'probe (and probe program) 'ioViolation #f)]))
 
 (define (semantic-verdict candidate expected)
   (cond
@@ -72,6 +107,7 @@
              'evaluates #f
              'structural #f
              'semantic (if probe-path "unknown" (json-null))
+             'ioViolation #f
              'error message)]
     [else
      (define final (cdr final-read))
@@ -93,6 +129,7 @@
              'evaluates (hash-ref side 'evaluates)
              'structural (and expected-ok (equal? final (cdr expected-read)))
              'semantic semantic
+             'ioViolation (hash-ref side 'ioViolation)
              'error #f)]))
 
 (define result
@@ -104,6 +141,7 @@
                              'evaluates #f
                              'structural #f
                              'semantic (if probe-path "unknown" (json-null))
+                             'ioViolation #f
                              'error message))])
     (build-result)))
 

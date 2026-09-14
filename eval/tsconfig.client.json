@@ -5,6 +5,6 @@
     "types": [],
     "noEmit": true
   },
-  "include": ["report.client.ts"],
+  "include": ["report.client.ts", "report.notes.ts"],
   "exclude": []
 }

@@ -1,3 +1,4 @@
+import { headlineNote } from "./report.notes.js";
 import type {
   Arm,
   ArmSummary,
@@ -139,7 +140,7 @@ function summaryTable(rows: ArmSummary[]): string {
   let html =
     '<table class="grid"><thead><tr>' +
     "<th>编辑方式</th>" +
-    '<th class="num">成功@1</th><th class="num">结构</th><th class="num">语义</th>' +
+    '<th class="num">成功</th><th class="num">结构</th><th class="num">语义</th>' +
     '<th class="num">平均步数</th><th class="num">平均 Tokens</th>' +
     "</tr></thead><tbody>";
   rows.forEach(function (row) {
@@ -162,12 +163,8 @@ function summaryTable(rows: ArmSummary[]): string {
 }
 
 function renderSummary(): void {
-  const excluded = DATA.bracketDanger.taskIds.length;
-  const note =
-    '<p class="note">上方汇总已排除 ' +
-    excluded +
-    ' 个括号危险任务（见 <a href="#bracket-success">括号危险可靠性单元</a>）。</p>';
-  document.getElementById("summary")!.innerHTML = summaryTable(DATA.summary) + note;
+  document.getElementById("summary")!.innerHTML =
+    summaryTable(DATA.summary) + headlineNote(DATA.bracketDanger.taskIds.length);
 }
 
 function renderBracketDanger(): void {
@@ -388,7 +385,8 @@ function renderRequestContext(run: RunResult): HTMLElement {
   const transcript = (run.transcript || []) as TranscriptMessage[];
   const rows: Array<[string, string]> = [
     ["arm", arm.name],
-    ["model", run.model || "(default)"],
+    ["driver", run.driver],
+    ["model", run.driver === "mock" ? "(mock)" : run.model || "(default)"],
     ["temperature", String(run.temperature == null ? "(default)" : run.temperature)],
     ["tools", arm.tools && arm.tools.length ? arm.tools.join(", ") : "(无工具)"],
     ["message 数", String(transcript.length)],
@@ -542,6 +540,7 @@ function openDetail(taskId: string, arm: string): void {
       ["解析", run.parsed ? "通过" : "失败"],
       ["括号", run.parenMismatch ? "不匹配" : "匹配"],
       ["求值", run.evaluates ? "通过" : "失败"],
+      ["I/O", run.ioViolation ? "越界" : "正常"],
     ] as Array<[string, string]>
   ).forEach(function (p) {
     const c = el("span", "chip");

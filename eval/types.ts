@@ -59,18 +59,29 @@ export interface DriverRequest {
   signal?: AbortSignal;
 }
 
+export type DriverIdentity = "mock" | "openai";
+
+export interface DriverConfig {
+  model?: string;
+  temperature?: number;
+}
+
 export interface AgentDriver {
+  id: DriverIdentity;
+  config(arm: Arm): DriverConfig;
   run(request: DriverRequest): Promise<DriverResult>;
 }
 
 export interface RunResult {
   taskId: string;
   arm: ArmName;
+  driver: DriverIdentity;
   model?: string;
   temperature?: number;
   parsed: boolean;
   parenMismatch: boolean;
   hunkFailure: boolean;
+  ioViolation: boolean;
   evaluates: boolean;
   success: boolean;
   structural: boolean;
@@ -90,6 +101,7 @@ export interface Score {
   success: boolean;
   structural: boolean;
   semantic: SemanticVerdict | null;
+  ioViolation: boolean;
   error: string | null;
 }
 

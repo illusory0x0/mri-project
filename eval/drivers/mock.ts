@@ -1,4 +1,4 @@
-import { AgentDriver, DriverRequest, DriverResult } from "../types.js";
+import { AgentDriver, Arm, DriverConfig, DriverRequest, DriverResult } from "../types.js";
 
 function makeDiff(input: string, expected: string): string {
   return `--- program.rkt
@@ -10,6 +10,12 @@ function makeDiff(input: string, expected: string): string {
 }
 
 export class MockDriver implements AgentDriver {
+  readonly id = "mock" as const;
+
+  config(_arm: Arm): DriverConfig {
+    return {};
+  }
+
   async run(request: DriverRequest): Promise<DriverResult> {
     const { arm, task, ctx } = request;
     const transcript: unknown[] = [];

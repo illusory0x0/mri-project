@@ -12,6 +12,7 @@ interface RacketResult {
   evaluates: boolean;
   structural: boolean;
   semantic: SemanticVerdict | null;
+  ioViolation?: boolean;
   error: string | null;
 }
 
@@ -45,6 +46,7 @@ export async function scoreArtifact(
         success: false,
         structural: false,
         semantic: probe !== undefined ? "unknown" : null,
+        ioViolation: false,
         error: result.stderr.trim() || "racket scorer failed",
       };
     }
@@ -57,6 +59,7 @@ export async function scoreArtifact(
       success: parsed.structural && parsed.evaluates,
       structural: parsed.structural,
       semantic: parsed.semantic ?? null,
+      ioViolation: parsed.ioViolation ?? false,
       error: parsed.error,
     };
   } finally {

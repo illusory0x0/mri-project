@@ -1,11 +1,13 @@
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
 import { test } from "node:test";
 import { computeTargetDepth } from "../eval/depth.js";
 import { MockDriver } from "../eval/drivers/mock.js";
 import { parseArgs } from "../eval/options.js";
 import { runProcess } from "../eval/process.js";
 import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
-import { mapLimit, runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
+import { loadTasks, mapLimit, runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
+import { headlineNote } from "../eval/report.notes.js";
 import { scoreArtifact } from "../eval/scorer.js";
 import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
@@ -134,6 +136,39 @@ test("scorer: an unreadable candidate is semantically unknown, not different", a
   assert.equal(score.semantic, "unknown");
 });
 
+test("scorer: a candidate reading a file is flagged as an I/O violation", async () => {
+  const score = await scoreArtifact(
+    '(define x (open-input-file "/etc/hostname"))',
+    task.expected
+  );
+  assert.equal(score.parsed, true);
+  assert.equal(score.ioViolation, true);
+  assert.equal(score.success, false);
+});
+
+test("scorer: a candidate writing a file is blocked and flagged", async () => {
+  const target = "/tmp/lisp-editor-should-not-exist";
+  const score = await scoreArtifact(
+    `(define x (open-output-file "${target}"))`,
+    task.expected
+  );
+  assert.equal(score.ioViolation, true);
+  assert.equal(existsSync(target), false);
+});
+
+test("scorer: a candidate opening a network connection is flagged", async () => {
+  const score = await scoreArtifact(
+    '(define x (tcp-connect "example.com" 80))',
+    task.expected
+  );
+  assert.equal(score.ioViolation, true);
+});
+
+test("scorer: an ordinary program is not flagged as an I/O violation", async () => {
+  const score = await scoreArtifact(task.expected, task.expected);
+  assert.equal(score.ioViolation, false);
+});
+
 test("computeTargetDepth: derives the depth of the changed node", () => {
   assert.equal(computeTargetDepth("(a b)", "(a c)"), 2);
   assert.equal(computeTargetDepth("(a (b c))", "(a (b d))"), 3);
@@ -149,6 +184,13 @@ test("computeTargetDepth: insert/delete reports the containing list's depth", ()
   assert.equal(computeTargetDepth(deleteInput, deleteExpected), 3);
 });
 
+test("computeTargetDepth: the corpus insert and delete tasks pin the containing list's depth", async () => {
+  const tasks = await loadTasks();
+  const byId = new Map(tasks.map((t) => [t.id, t]));
+  assert.equal(byId.get("t17-insert-param")!.depth, 2);
+  assert.equal(byId.get("t16-delete-binding")!.depth, 3);
+});
+
 test("runOne: direct arm scores its typed artifact", async () => {
   const result = await runOne(new MockDriver(), directArm, task);
   assert.equal(result.success, true);
@@ -159,9 +201,11 @@ test("summarize: semantic rate excludes unknown", () => {
   const base: RunResult = {
     taskId: "t",
     arm: "ast-edit",
+    driver: "mock",
     parsed: true,
     parenMismatch: false,
     hunkFailure: false,
+    ioViolation: false,
     evaluates: true,
     success: false,
     structural: false,
@@ -215,6 +259,8 @@ test("runOne: diff arm applies the patch and scores the result", async () => {
 
 test("runOne: diff arm with malformed patch marks failure without throwing", async () => {
   const malformedDriver: AgentDriver = {
+    id: "mock",
+    config: () => ({}),
     async run(request: DriverRequest): Promise<DriverResult> {
       return {
         finalArtifact: "this is not a valid diff",
@@ -228,6 +274,43 @@ test("runOne: diff arm with malformed patch marks failure without throwing", asy
   assert.equal(result.success, false);
   assert.equal(result.hunkFailure, true);
   assert.match(result.parseError ?? "", /diff apply failed/);
+});
+
+test("runOne: records the driver identity and the configuration it used", async () => {
+  const driver: AgentDriver = {
+    id: "openai",
+    config: () => ({ model: "test-model", temperature: 0.3 }),
+    async run() {
+      return { finalArtifact: task.expected, steps: 0, tokens: 1, transcript: [] };
+    },
+  };
+  const result = await runOne(driver, directArm, task);
+  assert.equal(result.driver, "openai");
+  assert.equal(result.model, "test-model");
+  assert.equal(result.temperature, 0.3);
+});
+
+test("runOne: a mock run is labelled as the mock driver", async () => {
+  const result = await runOne(new MockDriver(), directArm, task);
+  assert.equal(result.driver, "mock");
+});
+
+test("openai driver: reports its identity and effective configuration", () => {
+  const driver = new OpenAICompatibleDriver({
+    baseUrl: "http://example.test",
+    apiKey: "test",
+    model: "base-model",
+    temperature: 0.2,
+  });
+  assert.equal(driver.id, "openai");
+  assert.deepEqual(driver.config(directArm), {
+    model: "base-model",
+    temperature: 0.2,
+  });
+  assert.deepEqual(
+    driver.config({ ...directArm, model: "arm-model", temperature: 0.7 }),
+    { model: "arm-model", temperature: 0.7 }
+  );
 });
 
 test("openai driver: retries an empty response and eventually succeeds", async () => {
@@ -569,6 +652,8 @@ test(
   async () => {
     let aborted = false;
     const slowDriver: AgentDriver = {
+      id: "mock",
+      config: () => ({}),
       async run(request) {
         return new Promise<never>((_resolve, reject) => {
           request.signal?.addEventListener("abort", () => {
@@ -598,9 +683,11 @@ test("summarize: aggregates rates per arm", () => {
   ): RunResult => ({
     taskId: "t",
     arm,
+    driver: "mock",
     parsed,
     parenMismatch: paren,
     hunkFailure: false,
+    ioViolation: false,
     evaluates: parsed,
     success,
     structural: success,
@@ -635,9 +722,11 @@ test("summarize: a hunk-application failure is not a parse error", () => {
   const base: RunResult = {
     taskId: "t",
     arm: "diff",
+    driver: "mock",
     parsed: false,
     parenMismatch: false,
     hunkFailure: false,
+    ioViolation: false,
     evaluates: false,
     success: false,
     structural: false,
@@ -667,9 +756,11 @@ test("headline summary excludes exactly the bracket-danger task list", () => {
   const base: RunResult = {
     taskId: task.id,
     arm: "ast-edit",
+    driver: "mock",
     parsed: true,
     parenMismatch: false,
     hunkFailure: false,
+    ioViolation: false,
     evaluates: true,
     success: true,
     structural: true,
@@ -693,4 +784,7 @@ test("headline summary excludes exactly the bracket-danger task list", () => {
   const headlineRuns = headline.find((item) => item.arm === "ast-edit")!.runs;
   assert.equal(headlineRuns + cellRuns, runs.length);
   assert.equal(headlineRuns, 1);
+
+  const note = headlineNote(cell.taskIds.length);
+  assert.match(note, new RegExp("排除 " + cell.taskIds.length + " 个"));
 });

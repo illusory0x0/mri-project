@@ -151,18 +151,26 @@ a child index, not filesystem paths. No session, no cursor, no `finish` step, no
 - `lisp-editor insert --in <srcpath> --into <astpath> --at <index>` — copies the
   node at `--in` into the list at `<astpath>` before child `<index>`.
 
-**Shape catalogue (v1, fixed).**
+**Shape catalogue (v2).**
 - `lambda` → `(lambda (_param) _body)`
 - `if` → `(if _cond _then _else)`
 - `define` → `(define _name _body)`
+- `define-fn` → `(define (_name _param) _body)`, a function header
 - `let` → `(let ((_name _value)) _body)`
+- `let*` → `(let* ((_name _value)) _body)`
+- `cond` → `(cond (_test1 _body1) (_test2 _body2))`
+- `list` → `(_item1 _item2)`, a general two-element list of holes
 - `apply:<n>` → `(_func _arg1 ... _argn)`, e.g. `apply:2` → `(_func _arg1 _arg2)`
 - `hole` → a bare `_` placeholder (named holes appear in the skeletons above)
 - parameterized atoms: `var:<name>` → `<name>`, `num:<n>` → `<n>`,
   `str:<s>` → `"<s>"`
 
-There is no free-text `--text` mode in v1; arbitrary expressions are composed
-from shapes and atoms.
+There is no free-text `--text` mode in v2; arbitrary expressions are composed
+from shapes and atoms. There is also no atomic `wrap`/transform verb: `replace`
+discards the node at `--out`, so wrapping a node in a new form requires copying
+it out first (`replace --in <path> --out <tmp>`), or rebuilding the form around
+it, before overwriting `<path>`. The vocabulary stays one node per call, at the
+cost of extra steps on wrap tasks.
 
 **Supported subset.** `define`, `lambda`, `let`, `let*`, `if`, `cond`,
 variables, application, numbers, strings, and symbols — enough to write simple
@@ -191,8 +199,10 @@ The command is exposed as the `lisp-editor` bin.
   `construct` (`atom` | `wrap` | `build` | `copy` | `multi`). A task may also
   carry an optional `semantic` probe: an expression evaluated against both the
   candidate and the expected program. The harness also computes each task's
-  target depth and records it as report metadata; depth is not an experimental
-  factor.
+  target depth — the depth of the first divergence between input and expected,
+  reported at the containing list's depth when an insert or delete changes a
+  list's child count — and records it as report metadata; depth is not an
+  experimental factor.
 - arms: `direct` (agent outputs whole-file text), `ast-edit` (agent drives
   `lisp-editor`), `text-edit` (agent uses shell/`sed`/`awk`), `diff` (agent
   replies with a unified diff that the harness applies).
@@ -277,13 +287,14 @@ integration tests establish the pattern future work should follow.
   out of its parent list and `insert` places a node at a chosen index (the root
   is the program's list of top-level forms, so inserting into the root adds a
   top-level form and bootstraps an empty program).
-- **Open follow-ups.** If shape/atom expressiveness proves too weak for the task
-  set, a constrained free-text mode may need revisiting; that decision was
-  deliberately deferred until the first experiment data existed. The first
-  real-model runs now exist, so the review is due: `outline` recognizes `cond`
-  and `let*` but no shape constructs them, there is no general `list` shape,
-  `define` cannot build a function header, and there is no atomic `wrap`.
-  Tracked in `.scratch/lisp-editor/issues/20-shape-vocabulary-v2.md`.
+- **Vocabulary v2 adopted.** The first real-model runs showed `outline`
+  classified `cond`, `let*`, and plain `list` nodes that no shape could
+  construct, that `define` could not build a function header, and that wrapping a
+  compound body was expensive. v2 adds `cond`, `let*`, `list`, and `define-fn`
+  shapes. An atomic `wrap`/transform verb was weighed against the one-node-per-
+  call model and rejected for now: v2 keeps the model and documents the
+  copy-before-overwrite order instead (see the shape catalogue). A `just eval`
+  re-run to compare cost and expressiveness against v1 is still pending.
 - **Deferred: cost by construct.** The summary reports a single step/token figure
   per arm, which averages `atom` tasks (≈2 steps) with `build` tasks (≈12 steps)
   and hides where the vocabulary is expensive. Splitting the cost summary by

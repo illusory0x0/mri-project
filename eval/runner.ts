@@ -89,8 +89,6 @@ export function buildToolContext(
 }
 
 export interface RunMeta {
-  model?: string;
-  temperature?: number;
   timeoutMs?: number;
 }
 
@@ -122,6 +120,7 @@ export async function runOne(
 ): Promise<RunResult> {
   const workspace: Workspace = { source: task.input };
   const { depth } = withDepth(task);
+  const { model, temperature } = driver.config(arm);
   const timeoutMs = meta.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const controller = new AbortController();
   const ctx = buildToolContext(workspace, controller.signal);
@@ -163,11 +162,13 @@ export async function runOne(
     return {
       taskId: task.id,
       arm: arm.name,
-      model: meta.model,
-      temperature: meta.temperature,
+      driver: driver.id,
+      model,
+      temperature,
       parsed: false,
       parenMismatch: false,
       hunkFailure: false,
+      ioViolation: false,
       evaluates: false,
       success: false,
       structural: false,
@@ -190,11 +191,13 @@ export async function runOne(
       return {
         taskId: task.id,
         arm: arm.name,
-        model: meta.model,
-        temperature: meta.temperature,
+        driver: driver.id,
+        model,
+        temperature,
         parsed: false,
         parenMismatch: false,
         hunkFailure: true,
+        ioViolation: false,
         evaluates: false,
         success: false,
         structural: false,
@@ -217,11 +220,13 @@ export async function runOne(
   return {
     taskId: task.id,
     arm: arm.name,
-    model: meta.model,
-    temperature: meta.temperature,
+    driver: driver.id,
+    model,
+    temperature,
     parsed: score.parsed,
     parenMismatch: score.parenMismatch,
     hunkFailure: false,
+    ioViolation: score.ioViolation,
     evaluates: score.evaluates,
     success: score.success,
     structural: score.structural,

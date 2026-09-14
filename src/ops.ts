@@ -22,11 +22,27 @@ const SHAPES: Record<string, Node> = {
   lambda: LIST([SYMBOL("lambda"), LIST([SYMBOL("_param")]), SYMBOL("_body")]),
   if: LIST([SYMBOL("if"), SYMBOL("_cond"), SYMBOL("_then"), SYMBOL("_else")]),
   define: LIST([SYMBOL("define"), SYMBOL("_name"), SYMBOL("_body")]),
+  "define-fn": LIST([
+    SYMBOL("define"),
+    LIST([SYMBOL("_name"), SYMBOL("_param")]),
+    SYMBOL("_body"),
+  ]),
   let: LIST([
     SYMBOL("let"),
     LIST([LIST([SYMBOL("_name"), SYMBOL("_value")])]),
     SYMBOL("_body"),
   ]),
+  "let*": LIST([
+    SYMBOL("let*"),
+    LIST([LIST([SYMBOL("_name"), SYMBOL("_value")])]),
+    SYMBOL("_body"),
+  ]),
+  cond: LIST([
+    SYMBOL("cond"),
+    LIST([SYMBOL("_test1"), SYMBOL("_body1")]),
+    LIST([SYMBOL("_test2"), SYMBOL("_body2")]),
+  ]),
+  list: LIST([SYMBOL("_item1"), SYMBOL("_item2")]),
   hole: SYMBOL("_"),
 };
 
@@ -64,7 +80,7 @@ export function expandShape(spec: string): Node {
   }
 
   throw new OpsError(
-    `unknown shape: ${spec} (valid shapes: lambda, if, define, let, apply:<n>, hole; atoms: var:<name>, num:<n>, str:<s>)`
+    `unknown shape: ${spec} (valid shapes: lambda, if, define, define-fn, let, let*, cond, list, apply:<n>, hole; atoms: var:<name>, num:<n>, str:<s>)`
   );
 }
 

@@ -1,4 +1,4 @@
-import { AgentDriver, DriverRequest, DriverResult } from "../types.js";
+import { AgentDriver, Arm, DriverConfig, DriverRequest, DriverResult } from "../types.js";
 
 export interface OpenAICompatibleOptions {
   baseUrl: string;
@@ -64,7 +64,16 @@ function isRetryableStatus(status: number): boolean {
 }
 
 export class OpenAICompatibleDriver implements AgentDriver {
+  readonly id = "openai" as const;
+
   constructor(private readonly options: OpenAICompatibleOptions) {}
+
+  config(arm: Arm): DriverConfig {
+    return {
+      model: arm.model ?? this.options.model,
+      temperature: arm.temperature ?? this.options.temperature ?? 0,
+    };
+  }
 
   async run(request: DriverRequest): Promise<DriverResult> {
     const { arm, task, tools, ctx, signal } = request;
