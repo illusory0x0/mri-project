@@ -254,7 +254,7 @@ test("runOne: diff arm applies the patch and scores the result", async () => {
   const result = await runOne(new MockDriver(), diffArm, task);
   assert.equal(result.success, true);
   assert.equal(result.parsed, true);
-  assert.equal(result.steps, 0);
+  assert.equal(result.steps, 1);
   assert.equal(result.finalArtifact.trim(), task.expected);
 });
 

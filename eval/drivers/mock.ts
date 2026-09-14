@@ -33,6 +33,7 @@ export class MockDriver implements AgentDriver {
       await ctx.exec("shell", { command });
       steps += 1;
     }
+    if (steps === 0) steps = 1;
 
     let finalArtifact = task.expected;
     if (task.id.includes("broken")) {

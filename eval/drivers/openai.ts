@@ -150,6 +150,7 @@ export class OpenAICompatibleDriver implements AgentDriver {
       if (typeof message.content === "string" && message.content.trim()) {
         lastContent = message.content;
       }
+      steps++;
 
       const toolCalls = message.tool_calls;
       if (Array.isArray(toolCalls) && toolCalls.length > 0) {
@@ -161,7 +162,6 @@ export class OpenAICompatibleDriver implements AgentDriver {
             input = {};
           }
           const output = await ctx.exec(call.function?.name ?? "", input);
-          steps++;
           messages.push({
             role: "tool",
             tool_call_id: call.id,

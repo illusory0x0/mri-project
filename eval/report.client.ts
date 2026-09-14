@@ -141,7 +141,7 @@ function summaryTable(rows: ArmSummary[]): string {
     '<table class="grid"><thead><tr>' +
     "<th>编辑方式</th>" +
     '<th class="num">成功</th><th class="num">结构</th><th class="num">语义</th>' +
-    '<th class="num">平均步数</th><th class="num">平均 Tokens</th>' +
+    '<th class="num">平均回合</th><th class="num">平均 Tokens</th>' +
     "</tr></thead><tbody>";
   rows.forEach(function (row) {
     const c = armColor(row.arm);
@@ -239,7 +239,7 @@ function renderMatrix(): void {
         '<td><button class="cell ' + (r.success ? "ok" : "bad") + '"' +
         ' data-task="' + esc(task.id) + '" data-arm="' + esc(a) + '">' +
         '<span class="mark">' + (r.success ? "✓" : "✗") + "</span>" +
-        '<span class="mini">' + r.steps + " 步 · " + r.tokens.toLocaleString() + " tok " + ratio + "</span>" +
+        '<span class="mini">' + r.steps + " 回合 · " + r.tokens.toLocaleString() + " tok " + ratio + "</span>" +
         "</button></td>";
     });
     html += "</tr>";
@@ -338,7 +338,7 @@ function renderTimeline(run: RunResult): HTMLElement {
         step++;
         const f = c.function || {};
         const st = el("div", "step");
-        st.appendChild(el("div", "stephead", "步骤 " + step + " · 工具调用 " + (f.name || "tool")));
+        st.appendChild(el("div", "stephead", "调用 " + step + " · " + (f.name || "tool")));
         st.appendChild(labeled("arguments（可读命令）", codeBlock("result cmd", commandOf(f.name, f.arguments))));
         const parsed = parseJsonish(f.arguments);
         if (parsed && typeof parsed === "object" && Array.isArray((parsed as { args?: unknown }).args)) {
@@ -390,7 +390,7 @@ function renderRequestContext(run: RunResult): HTMLElement {
     ["temperature", String(run.temperature == null ? "(default)" : run.temperature)],
     ["tools", arm.tools && arm.tools.length ? arm.tools.join(", ") : "(无工具)"],
     ["message 数", String(transcript.length)],
-    ["steps", fmt(run.steps)],
+    ["回合 (steps)", fmt(run.steps)],
     ["tokens", run.tokens.toLocaleString()],
     ["task", run.taskId],
   ];
@@ -455,7 +455,7 @@ function renderCompare(taskId: string): HTMLElement {
       wrap.appendChild(col);
       return;
     }
-    col.appendChild(el("div", "cmpsub", run.steps + " 步 · " + run.tokens.toLocaleString() + " tokens"));
+    col.appendChild(el("div", "cmpsub", run.steps + " 回合 · " + run.tokens.toLocaleString() + " tokens"));
     const cmds = stepLines((run.transcript || []) as TranscriptMessage[]);
     if (cmds.length) {
       const ol = el("ol", "cmdlist");
@@ -532,7 +532,7 @@ function openDetail(taskId: string, arm: string): void {
     run.semantic == null ? "无探针" : SEMANTIC_LABEL[run.semantic];
   (
     [
-      ["步数", fmt(run.steps)],
+      ["回合 (steps)", fmt(run.steps)],
       ["Tokens", run.tokens.toLocaleString()],
       ["深度", String(run.depth)],
       ["结构", run.structural ? "一致" : "不一致"],

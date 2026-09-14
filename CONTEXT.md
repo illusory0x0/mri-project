@@ -118,6 +118,13 @@ One task × arm × driver execution, with its transcript, score, step count, and
 token count.
 _Avoid_: trial, attempt
 
+**Step**:
+One conversation round in a run: a single request/response turn to the model,
+including the final confirmation turn. Issuing several tool calls in one turn
+does not change the step count; tool calls and commands per turn are recorded
+separately.
+_Avoid_: tool call, command
+
 **Success**:
 A run judged on its single final artifact, reported twice: structurally (the
 candidate and expected parse to the same datum sequence) and semantically (the

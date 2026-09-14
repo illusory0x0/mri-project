@@ -208,6 +208,10 @@ The command is exposed as the `lisp-editor` bin.
   replies with a unified diff that the harness applies).
 - runner: for each `(task × arm)`, runs the agent with the arm's
   prompt/tools, captures the transcript and final artifact, and scores it.
+  Effort is recorded as `steps` (conversation rounds — one per assistant turn,
+  including the final confirmation turn, regardless of how many tool calls the
+  turn issues) and `tokens` (summed API usage). Tool-call count and commands per
+  turn are recorded separately in the snapshot's batching diagnostics.
 - scoring: two independent verdicts per run. **Structural** — candidate and
   expected parse to the same datum sequence. **Semantic** — a task-declared
   probe evaluates to the same result for both, wherever a probe exists.
@@ -295,8 +299,9 @@ integration tests establish the pattern future work should follow.
   and documents the copy-before-overwrite order instead (see the shape
   catalogue).
 - **Cost by construct is reported by the summary snapshots.** The report's arm
-  table still shows a single step/token figure per arm, which averages `atom`
-  tasks (≈2 steps) with `build` tasks (≈12 steps). `just summary` therefore
+  table still shows a single round/token figure per arm, which averages `atom`
+  tasks with `build` tasks. (`steps` counts conversation rounds, not tool calls;
+  see the harness note.) `just summary` therefore
   writes a per-`construct` cost split (per arm) into the committed snapshot under
   `eval/summaries/`, alongside batching diagnostics (assistant turns, tool
   calls, commands per turn); the snapshot is the durable record and raw
