@@ -14,9 +14,9 @@ inside the experiment harness (ADR 0006).
 
 ## AST model
 
-A homogeneous s-expression tree: a node is either an **Atom** or a **List**.
-Comments and whitespace are discarded at parse time. There is no type or scope
-checking.
+A homogeneous s-expression tree of **Atom** and **List** nodes (both defined in
+[`CONTEXT.md`](../../CONTEXT.md)). Comments and whitespace are discarded at
+parse time. There is no type or scope checking.
 
 Reader forms:
 

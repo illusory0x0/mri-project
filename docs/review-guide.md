@@ -1,5 +1,8 @@
 # Review guide — where human attention pays off
 
+Audience: humans. The agent entry point is [`AGENTS.md`](../AGENTS.md); the
+documentation map is [`docs/README.md`](./README.md).
+
 This is a map for a human reviewing this repo. It ranks the documents and code by
 how much a careful read matters, and names the places where a review should *not*
 spend time. It is an orientation aid, not a spec; the spec is under

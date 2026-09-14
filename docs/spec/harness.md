@@ -19,11 +19,11 @@ Racket appears only in the harness — in the scorer, never in the product
 
 ## Run model
 
-A **Run** is one task × arm × **Driver** execution, with its transcript, score,
-step count, token count, and repeat index. The driver is the agent backend
-(`mock` or the OpenAI-compatible driver), and every run artifact records which
-driver produced it, the model and temperature actually used, the structural and
-semantic verdicts, and the task's target depth.
+A **Run** (the term is defined in [`CONTEXT.md`](../../CONTEXT.md)) records its
+transcript, score, step count, token count, and repeat index. The driver is the
+agent backend (`mock` or the OpenAI-compatible driver), and every run artifact
+records which driver produced it, the model and temperature actually used, the
+structural and semantic verdicts, and the task's target depth.
 
 **Effort** is recorded as `steps` (conversation rounds — one per assistant turn,
 including the final confirmation turn, regardless of how many tool calls the turn
