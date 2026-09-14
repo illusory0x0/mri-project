@@ -22,6 +22,7 @@ export interface Task {
   locate: LocateDifficulty;
   construct?: ConstructKind;
   operation?: OperationKind;
+  set?: string;
   instruction: string;
   input: string;
   expected: string;
@@ -150,7 +151,13 @@ export interface ReportData {
   tasks: LoadedTask[];
   runs: RunResult[];
   summary: ArmSummary[];
+  perSet: SetSummary[];
   bracketDanger: BracketDangerCell;
+}
+
+export interface TaskSetRef {
+  name: string;
+  hash: string;
 }
 
 export interface SummaryProvenance {
@@ -160,15 +167,20 @@ export interface SummaryProvenance {
   model: string;
   temperature: string;
   driver: string;
-  taskSet: string;
+  taskSets: TaskSetRef[];
   armHash: string;
   vocabHash: string;
   taskSetHash: string;
   scorerHash: string;
 }
 
+export interface SetSummary extends ArmSummary {
+  set: string;
+}
+
 export interface ConstructSummary {
   arm: ArmName;
+  set: string;
   construct: ConstructKind;
   runs: number;
   successRate: number;
@@ -182,6 +194,7 @@ export interface ConstructSummary {
 
 export interface OperationSummary {
   arm: ArmName;
+  set: string;
   operation: OperationKind;
   runs: number;
   successRate: number;
@@ -208,6 +221,7 @@ export interface BatchingStat {
 export interface SummaryRunRow {
   taskId: string;
   arm: ArmName;
+  set: string;
   construct: ConstructKind | null;
   operation: OperationKind | null;
   locate: LocateDifficulty;
@@ -224,6 +238,7 @@ export interface SummaryRunRow {
 export interface SummarySnapshot {
   provenance: SummaryProvenance;
   headline: ArmSummary[];
+  perSet: SetSummary[];
   bracketDanger: BracketDangerCell;
   perConstruct: ConstructSummary[];
   perOperation: OperationSummary[];

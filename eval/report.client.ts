@@ -129,6 +129,8 @@ function renderStats(): void {
   const bits: string[] = [];
   bits.push(DATA.runs.length + " 次运行");
   bits.push(DATA.tasks.length + " 个任务");
+  const sets = new Set(DATA.tasks.map((task) => task.set || "unknown"));
+  if (sets.size > 0) bits.push(sets.size + " 个任务集");
   bits.push(DATA.armNames.length + " 种编辑方式");
   if (DATA.models.length) bits.push("模型 " + DATA.models.join(", "));
   if (DATA.temperatures.length) bits.push("temperature " + DATA.temperatures.join(", "));
@@ -163,8 +165,18 @@ function summaryTable(rows: ArmSummary[]): string {
 }
 
 function renderSummary(): void {
-  document.getElementById("summary")!.innerHTML =
+  let html =
     summaryTable(DATA.summary) + headlineNote(DATA.bracketDanger.taskIds.length);
+  const sets = [...new Set(DATA.perSet.map((row) => row.set))].sort();
+  sets.forEach(function (set) {
+    const rows = DATA.perSet.filter((row) => row.set === set);
+    html +=
+      '<h3 style="margin-top:18px">任务集 · ' +
+      esc(set) +
+      "</h3>" +
+      summaryTable(rows);
+  });
+  document.getElementById("summary")!.innerHTML = html;
 }
 
 function renderBracketDanger(): void {
@@ -205,13 +217,40 @@ function renderBracketDanger(): void {
     " 个括号危险任务上的失败构成；这些任务已从上方汇总中排除。</p>";
 }
 
+let setFilter = "all";
+
+function setNames(): string[] {
+  return [...new Set(DATA.tasks.map((task) => task.set || "unknown"))].sort();
+}
+
+function setFilterBar(): string {
+  const names = setNames();
+  if (names.length <= 1) return "";
+  let html = '<div class="setfilter">任务集：';
+  ["all", ...names].forEach(function (name) {
+    const active = setFilter === name ? " active" : "";
+    html +=
+      '<button type="button" class="setbtn' +
+      active +
+      '" data-set="' +
+      esc(name) +
+      '">' +
+      esc(name === "all" ? "全部" : name) +
+      "</button>";
+  });
+  return html + "</div>";
+}
+
 function renderMatrix(): void {
-  let html = '<table class="grid matrix"><thead><tr><th>任务</th>';
+  const tasks = DATA.tasks.filter(function (task) {
+    return setFilter === "all" || (task.set || "unknown") === setFilter;
+  });
+  let html = setFilterBar() + '<table class="grid matrix"><thead><tr><th>任务</th>';
   DATA.armNames.forEach(function (a) {
     html += '<th style="color:' + armColor(a) + '">' + esc(a) + "</th>";
   });
   html += "</tr></thead><tbody>";
-  DATA.tasks.forEach(function (task) {
+  tasks.forEach(function (task) {
     const directRun = DATA.runs.filter(function (r) {
       return r.taskId === task.id && r.arm === "direct";
     })[0];
@@ -219,7 +258,8 @@ function renderMatrix(): void {
     html +=
       '<tr><td class="taskcell"><div class="tid">' + esc(task.id) + "</div>" +
       '<div class="ins">' + esc(task.instruction) + "</div>" +
-      '<div class="tags"><span class="tag">' + esc(task.operation ?? task.construct ?? "") + "</span>" +
+      '<div class="tags"><span class="tag">' + esc(task.set || "unknown") + "</span>" +
+      '<span class="tag alt">' + esc(task.operation ?? task.construct ?? "") + "</span>" +
       '<span class="tag alt">' + esc(task.locate) + "</span>" +
       '<span class="tag alt">depth ' + task.depth + "</span>" +
       (task.bracketDanger ? '<span class="tag">bracket</span>' : "") +
@@ -244,7 +284,14 @@ function renderMatrix(): void {
     });
     html += "</tr>";
   });
-  document.getElementById("matrix")!.innerHTML = html + "</tbody></table>";
+  const box = document.getElementById("matrix")!;
+  box.innerHTML = html + "</tbody></table>";
+  box.querySelectorAll(".setbtn").forEach(function (node) {
+    node.addEventListener("click", function () {
+      setFilter = (node as HTMLElement).dataset.set || "all";
+      renderMatrix();
+    });
+  });
 }
 
 function renderOutline(nodes: OutlineNode[]): HTMLElement {

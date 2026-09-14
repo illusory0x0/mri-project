@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
+import path from "node:path";
 import { test } from "node:test";
 import { computeTargetDepth } from "../eval/depth.js";
 import { MockDriver } from "../eval/drivers/mock.js";
@@ -9,7 +10,7 @@ import { OpenAICompatibleDriver } from "../eval/drivers/openai.js";
 import { loadTasks, mapLimit, runOne, selectTasks, summarize, summarizeBracketDanger, summarizeHeadline } from "../eval/runner.js";
 import { headlineNote } from "../eval/report.notes.js";
 import { scoreArtifact } from "../eval/scorer.js";
-import { buildSnapshot } from "../eval/summary.js";
+import { buildSnapshot, collectProvenance } from "../eval/summary.js";
 import { AgentDriver, Arm, DriverRequest, DriverResult, RunResult, Task } from "../eval/types.js";
 
 const directArm: Arm = { name: "direct", systemPrompt: "test", tools: [] };
@@ -836,7 +837,7 @@ test("summary: builds per-construct totals, batching rate, and hides danger task
     model: "m",
     temperature: "1",
     driver: "openai",
-    taskSet: "tasks",
+    taskSets: [{ name: "basic", hash: "h" }],
     armHash: "arm",
     vocabHash: "vocab",
     taskSetHash: "tasks",
@@ -951,7 +952,7 @@ test("summary: corpus tasks group under their operation, not construct", () => {
     model: "mock",
     temperature: "default",
     driver: "mock",
-    taskSet: "tasks-leetcode",
+    taskSets: [{ name: "tasks-leetcode", hash: "h" }],
     armHash: "arm",
     vocabHash: "vocab",
     taskSetHash: "tasks",
@@ -965,5 +966,86 @@ test("summary: corpus tasks group under their operation, not construct", () => {
   assert.equal(operation.runs, 1);
   assert.equal(snapshot.runs[0].construct, null);
   assert.equal(snapshot.runs[0].operation, "move-subtree");
-  assert.equal(snapshot.provenance.taskSet, "tasks-leetcode");
+  assert.equal(snapshot.provenance.taskSets[0].name, "tasks-leetcode");
+});
+
+test("provenance: records every task set with a content hash", async () => {
+  const provenance = await collectProvenance([], {
+    arms: path.resolve(process.cwd(), "eval/arms"),
+    tasks: path.resolve(process.cwd(), "eval/tasks"),
+  });
+  assert.deepEqual(
+    provenance.taskSets.map((set) => set.name),
+    ["basic", "leetcode", "orthogonal"]
+  );
+  assert.equal(provenance.taskSetHash.length, 64);
+  for (const set of provenance.taskSets) assert.equal(set.hash.length, 64);
+});
+
+test("summary: per-set aggregates keep task sets separate", () => {
+  const basicTask: Task = {
+    id: "b1",
+    locate: "explicit",
+    construct: "atom",
+    set: "basic",
+    instruction: "",
+    input: "",
+    expected: "",
+  };
+  const corpusTask: Task = {
+    id: "c1",
+    locate: "described",
+    operation: "replace-node",
+    set: "leetcode",
+    instruction: "",
+    input: "",
+    expected: "",
+  };
+  const run = (taskId: string): RunResult => ({
+    taskId,
+    arm: "ast-edit",
+    driver: "mock",
+    parsed: true,
+    parenMismatch: false,
+    hunkFailure: false,
+    ioViolation: false,
+    evaluates: true,
+    success: true,
+    structural: true,
+    semantic: null,
+    depth: 0,
+    parseError: null,
+    steps: 1,
+    tokens: 10,
+    finalArtifact: "",
+    transcript: [],
+  });
+  const provenance = {
+    generatedAt: "2026-09-14T00:00:00.000Z",
+    gitCommit: "abc",
+    gitDirty: false,
+    model: "mock",
+    temperature: "default",
+    driver: "mock",
+    taskSets: [
+      { name: "basic", hash: "b" },
+      { name: "leetcode", hash: "l" },
+    ],
+    armHash: "arm",
+    vocabHash: "vocab",
+    taskSetHash: "tasks",
+    scorerHash: "scorer",
+  };
+  const snapshot = buildSnapshot(
+    [run("b1"), run("c1")],
+    [basicTask, corpusTask],
+    provenance
+  );
+  assert.deepEqual(
+    snapshot.perSet.map((set) => set.set).sort(),
+    ["basic", "leetcode"]
+  );
+  assert.ok(snapshot.perConstruct.every((row) => row.set === "basic"));
+  assert.ok(snapshot.perOperation.every((row) => row.set === "leetcode"));
+  assert.equal(snapshot.runs.find((row) => row.taskId === "b1")!.set, "basic");
 });

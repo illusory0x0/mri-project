@@ -7,6 +7,7 @@ import {
   loadJsonDir,
   loadTasks,
   summarizeBracketDanger,
+  summarizeBySet,
   summarizeHeadline,
 } from "./runner.js";
 import {
@@ -19,10 +20,12 @@ import {
   OperationKind,
   OperationSummary,
   RunResult,
+  SetSummary,
   SummaryProvenance,
   SummaryRunRow,
   SummarySnapshot,
   Task,
+  TaskSetRef,
 } from "./types.js";
 
 const ARM_ORDER: ArmName[] = ["direct", "ast-edit", "text-edit", "diff"];
@@ -93,6 +96,35 @@ function gitDirty(): boolean {
   }
 }
 
+async function hashTaskTree(
+  root: string
+): Promise<{ taskSetHash: string; taskSets: TaskSetRef[] }> {
+  const entries = (await readdir(root, { withFileTypes: true })).sort((a, b) =>
+    a.name.localeCompare(b.name)
+  );
+  const taskSets: TaskSetRef[] = [];
+  const parts: Array<string | Buffer> = [];
+  const flat: string[] = [];
+  for (const entry of entries) {
+    if (entry.isDirectory()) {
+      const hash = await hashDir(path.join(root, entry.name), (name) =>
+        name.endsWith(".json")
+      );
+      taskSets.push({ name: entry.name, hash });
+      parts.push(entry.name, hash);
+    } else if (entry.isFile() && entry.name.endsWith(".json")) {
+      flat.push(path.join(root, entry.name));
+    }
+  }
+  if (flat.length > 0) {
+    const name = path.basename(root);
+    const hash = await hashFiles(flat);
+    taskSets.unshift({ name, hash });
+    parts.push(name, hash);
+  }
+  return { taskSetHash: sha256(parts), taskSets };
+}
+
 export async function collectProvenance(
   runs: RunResult[],
   dirs: { arms: string; tasks: string }
@@ -102,6 +134,7 @@ export async function collectProvenance(
     ...new Set(runs.map((run) => String(run.temperature ?? "default"))),
   ];
   const drivers = [...new Set(runs.map((run) => run.driver))];
+  const tree = await hashTaskTree(dirs.tasks);
   return {
     generatedAt: new Date().toISOString(),
     gitCommit: gitCommit(),
@@ -109,10 +142,10 @@ export async function collectProvenance(
     model: models.join(","),
     temperature: temperatures.join(","),
     driver: drivers.join(","),
-    taskSet: path.basename(dirs.tasks),
+    taskSets: tree.taskSets,
     armHash: await hashDir(dirs.arms, (name) => name.endsWith(".json")),
     vocabHash: await hashFiles(["src/ops.ts", "eval/tools.ts"]),
-    taskSetHash: await hashDir(dirs.tasks, (name) => name.endsWith(".json")),
+    taskSetHash: tree.taskSetHash,
     scorerHash: await hashFiles(["eval/score.rkt", "eval/scorer.ts"]),
   };
 }
@@ -174,18 +207,20 @@ function summarizeRuns(arm: ArmName, results: RunResult[]) {
 
 function summarizeConstruct(
   arm: ArmName,
+  set: string,
   construct: ConstructKind,
   results: RunResult[]
 ): ConstructSummary {
-  return { arm, construct, ...summarizeRuns(arm, results) };
+  return { arm, set, construct, ...summarizeRuns(arm, results) };
 }
 
 function summarizeOperation(
   arm: ArmName,
+  set: string,
   operation: OperationKind,
   results: RunResult[]
 ): OperationSummary {
-  return { arm, operation, ...summarizeRuns(arm, results) };
+  return { arm, set, operation, ...summarizeRuns(arm, results) };
 }
 
 function runRows(
@@ -198,6 +233,7 @@ function runRows(
       return {
         taskId: run.taskId,
         arm: run.arm,
+        set: task?.set ?? "unknown",
         construct: task?.construct ?? null,
         operation: task?.operation ?? null,
         locate: task?.locate ?? "explicit",
@@ -224,36 +260,41 @@ export function buildSnapshot(
   const perOperation: OperationSummary[] = [];
   const cells: CellSummary[] = [];
   const LOCATES: LocateDifficulty[] = ["explicit", "described"];
-  for (const arm of ARM_ORDER) {
-    for (const construct of CONSTRUCT_ORDER) {
-      const results = runs.filter(
-        (run) =>
-          run.arm === arm &&
-          tasksById.get(run.taskId)?.construct === construct
-      );
-      if (results.length > 0) {
-        perConstruct.push(summarizeConstruct(arm, construct, results));
-      }
-      for (const locate of LOCATES) {
-        const cellRuns = results.filter(
-          (run) => (tasksById.get(run.taskId)?.locate ?? "explicit") === locate
+  const sets = [...new Set(tasks.map((task) => task.set ?? "unknown"))].sort();
+  for (const set of sets) {
+    for (const arm of ARM_ORDER) {
+      const inSet = (run: RunResult): boolean =>
+        run.arm === arm &&
+        (tasksById.get(run.taskId)?.set ?? "unknown") === set;
+      for (const construct of CONSTRUCT_ORDER) {
+        const results = runs.filter(
+          (run) =>
+            inSet(run) && tasksById.get(run.taskId)?.construct === construct
         );
-        if (cellRuns.length > 0) {
-          cells.push({
-            ...summarizeConstruct(arm, construct, cellRuns),
-            locate,
-          });
+        if (results.length > 0) {
+          perConstruct.push(summarizeConstruct(arm, set, construct, results));
+        }
+        for (const locate of LOCATES) {
+          const cellRuns = results.filter(
+            (run) =>
+              (tasksById.get(run.taskId)?.locate ?? "explicit") === locate
+          );
+          if (cellRuns.length > 0) {
+            cells.push({
+              ...summarizeConstruct(arm, set, construct, cellRuns),
+              locate,
+            });
+          }
         }
       }
-    }
-    for (const operation of OPERATION_ORDER) {
-      const results = runs.filter(
-        (run) =>
-          run.arm === arm &&
-          tasksById.get(run.taskId)?.operation === operation
-      );
-      if (results.length > 0) {
-        perOperation.push(summarizeOperation(arm, operation, results));
+      for (const operation of OPERATION_ORDER) {
+        const results = runs.filter(
+          (run) =>
+            inSet(run) && tasksById.get(run.taskId)?.operation === operation
+        );
+        if (results.length > 0) {
+          perOperation.push(summarizeOperation(arm, set, operation, results));
+        }
       }
     }
   }
@@ -261,6 +302,7 @@ export function buildSnapshot(
   return {
     provenance,
     headline: summarizeHeadline(runs, tasks),
+    perSet: summarizeBySet(runs, tasks),
     bracketDanger: summarizeBracketDanger(runs, tasks),
     perConstruct,
     perOperation,
@@ -337,7 +379,8 @@ async function main(): Promise<void> {
   const outFile = path.join(outDir, name);
   await writeFile(outFile, JSON.stringify(snapshot, null, 2) + "\n", "utf8");
   process.stdout.write(
-    `wrote ${outFile} (${runs.length} runs, task set ${provenance.taskSet}, ` +
+    `wrote ${outFile} (${runs.length} runs, task sets ` +
+      `${provenance.taskSets.map((set) => set.name).join("+") || "none"}, ` +
       `${snapshot.perConstruct.length} constructs, ${snapshot.perOperation.length} operations)\n`
   );
 }

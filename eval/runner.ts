@@ -15,6 +15,7 @@ import {
   DriverResult,
   LoadedTask,
   RunResult,
+  SetSummary,
   Task,
   ToolContext,
   ToolSpec,
@@ -345,6 +346,23 @@ export function summarize(results: RunResult[]): ArmSummary[] {
       meanTokens: mean((result) => result.tokens),
     };
   }).filter((summary) => summary.runs > 0);
+}
+
+export function summarizeBySet(runs: RunResult[], tasks: Task[]): SetSummary[] {
+  const setOf = new Map(tasks.map((task) => [task.id, task.set ?? "unknown"]));
+  const sets = [
+    ...new Set(runs.map((run) => setOf.get(run.taskId) ?? "unknown")),
+  ].sort();
+  const out: SetSummary[] = [];
+  for (const set of sets) {
+    const subset = runs.filter(
+      (run) => (setOf.get(run.taskId) ?? "unknown") === set
+    );
+    for (const summary of summarize(subset)) {
+      out.push({ ...summary, set });
+    }
+  }
+  return out;
 }
 
 export function bracketDangerTaskIds(tasks: Task[]): Set<string> {

@@ -6,6 +6,7 @@ import {
   loadJsonDir,
   loadTasks,
   summarizeBracketDanger,
+  summarizeBySet,
   summarizeHeadline,
 } from "./runner.js";
 import { TOOL_SPECS } from "./tools.js";
@@ -65,6 +66,10 @@ table.grid tbody tr:hover { background: var(--panel2); }
 .tags { display: flex; gap: 6px; margin-top: 6px; }
 .tag { font-size: 10.5px; letter-spacing: .03em; text-transform: uppercase; color: var(--accent); background: #1f2a3a; border: 1px solid #2d4a6b; border-radius: 20px; padding: 1px 8px; }
 .tag.alt { color: var(--muted); background: #20242b; border-color: var(--border); }
+.setfilter { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; color: var(--muted); font-size: 12.5px; }
+.setbtn { background: var(--panel2); border: 1px solid var(--border); color: var(--muted); border-radius: 20px; padding: 3px 11px; cursor: pointer; font-size: 12.5px; }
+.setbtn:hover { color: var(--fg); }
+.setbtn.active { color: var(--fg); border-color: var(--accent); }
 .cell {
   width: 100%; cursor: pointer; background: var(--panel2); border: 1px solid var(--border);
   border-radius: 8px; padding: 7px 8px; color: var(--fg); display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
@@ -241,6 +246,7 @@ async function main(): Promise<void> {
     tasks,
     runs,
     summary: summarizeHeadline(runs, allTasks),
+    perSet: summarizeBySet(runs, allTasks),
     bracketDanger: summarizeBracketDanger(runs, allTasks),
   };
 
