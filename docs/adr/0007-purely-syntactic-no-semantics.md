@@ -1,6 +1,6 @@
 # A purely syntactic editor: no semantics, no reader macros
 
-Status: accepted
+Status: amended by ADR 0011
 Date: 2026-09-14
 
 **Context.** The target programs are ordinary Lisp/Racket code. The supported

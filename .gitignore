@@ -4,3 +4,4 @@ eval/results*/
 eval/report.html
 package-lock.json
 .env
+tmp/

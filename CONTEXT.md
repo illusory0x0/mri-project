@@ -15,7 +15,7 @@ One element of the program tree: either an atom or a list.
 _Avoid_: expression, term
 
 **Atom**:
-A leaf node: a symbol, a number, or a string.
+A leaf node: a symbol, a number, a string, a boolean, or a character.
 _Avoid_: literal, token
 
 **List**:
@@ -38,8 +38,9 @@ _Avoid_: tree dump, listing, index
 
 **Shape**:
 A named specification that produces a node when expanded: either a skeleton
-shape (`lambda`, `if`, `define`, `let`, `apply:<n>`) yielding a list with holes,
-or an atom shape (`var:<name>`, `num:<n>`, `str:<s>`) yielding an atom.
+shape (`lambda`, `if`, `define`, `define-fn`, `let`, `let*`, `cond`, `list`,
+`apply:<n>`) yielding a list with holes, or an atom shape (`var:<name>`,
+`num:<n>`, `str:<s>`, `hole`) yielding an atom.
 _Avoid_: template, macro, constructor
 
 **Skeleton**:
@@ -62,6 +63,15 @@ The edit operation that places a new node â€” from a shape or a copied subtree â
 at a chosen index in a list. Adding a top-level form is insertion into the root.
 _Avoid_: add, append
 
+**Corpus**:
+An imported body of real programs used as raw material for authoring tasks; it
+is not itself run.
+_Avoid_: dataset, fixtures, task set
+
+**Task set**:
+A named collection of tasks that are run together.
+_Avoid_: suite, benchmark, collection, corpus
+
 **Task**:
 One editing problem in the experiment: an input program, an instruction, an
 expected program, and two difficulty labels.
@@ -76,10 +86,15 @@ How a task names its target: `explicit` (the expression is spelled out) or
 `described` (a natural-language reference must be resolved).
 _Avoid_: reference, addressing, search
 
-**Construct** (kind axis):
+**Construct** (kind axis, synthetic tasks):
 What a task asks the caller to build: `atom`, `wrap`, `build`, `copy`, or
 `multi`.
 _Avoid_: edit type, operation type
+
+**Operation** (kind axis, corpus tasks):
+What an edit does to the corpus program: `replace-node`, `insert-node`,
+`delete-node`, `wrap-node`, or `move-subtree`.
+_Avoid_: edit type, action, construct
 
 **Scorer**:
 The component that parses a candidate program, checks bracket balance,
