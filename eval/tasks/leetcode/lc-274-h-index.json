@@ -3,8 +3,8 @@
   "locate": "described",
   "operation": "replace-node",
   "instruction": "In h-index the loop only counts a paper when its citations are strictly greater than the current h. Count them when they are greater or equal.",
-  "input": "\n(define (h-index citations)\n  (foldl (λ (x h) (if (>= x h) (+ h 1) h))\n         0\n         (sort citations >)))",
-  "expected": "\n(define (h-index citations)\n  (foldl (λ (x h) (if (> x h) (+ h 1) h))\n         0\n         (sort citations >)))",
+  "input": "\n(define (h-index citations)\n  (foldl (λ (x h) (if (> x h) (+ h 1) h))\n         0\n         (sort citations >)))",
+  "expected": "\n(define (h-index citations)\n  (foldl (λ (x h) (if (>= x h) (+ h 1) h))\n         0\n         (sort citations >)))",
   "probe": "(h-index '(1 1))",
   "source": {
     "repo": "https://github.com/s-cerevisiae/leetcode-racket",

@@ -3,8 +3,8 @@
   "locate": "explicit",
   "operation": "replace-node",
   "instruction": "In can-jump the #:break guard compares reach and i the wrong way. Break when reach is greater than i.",
-  "input": "\n(define (can-jump nums)\n  (define max-reach\n    (for/fold ([reach 0])\n              ([n (in-list nums)]\n               [i (in-naturals)])\n      #:break (> reach i)\n      (max reach (+ n i))))\n  (>= max-reach (sub1 (length nums))))",
-  "expected": "\n(define (can-jump nums)\n  (define max-reach\n    (for/fold ([reach 0])\n              ([n (in-list nums)]\n               [i (in-naturals)])\n      #:break (< reach i)\n      (max reach (+ n i))))\n  (>= max-reach (sub1 (length nums))))",
+  "input": "\n(define (can-jump nums)\n  (define max-reach\n    (for/fold ([reach 0])\n              ([n (in-list nums)]\n               [i (in-naturals)])\n      #:break (< reach i)\n      (max reach (+ n i))))\n  (>= max-reach (sub1 (length nums))))",
+  "expected": "\n(define (can-jump nums)\n  (define max-reach\n    (for/fold ([reach 0])\n              ([n (in-list nums)]\n               [i (in-naturals)])\n      #:break (> reach i)\n      (max reach (+ n i))))\n  (>= max-reach (sub1 (length nums))))",
   "probe": "(can-jump '(2 3 1 1 4))",
   "source": {
     "repo": "https://github.com/s-cerevisiae/leetcode-racket",

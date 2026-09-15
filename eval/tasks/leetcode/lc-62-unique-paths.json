@@ -3,8 +3,8 @@
   "locate": "explicit",
   "operation": "replace-node",
   "instruction": "In unique-paths, multiply x by y instead of dividing.",
-  "input": "\n(define (unique-paths m n)\n  (for/product ([x (in-range n (+ m (- n 1)))]\n                [y (in-range 1 m)])\n    (* x y)))",
-  "expected": "\n(define (unique-paths m n)\n  (for/product ([x (in-range n (+ m (- n 1)))]\n                [y (in-range 1 m)])\n    (/ x y)))",
+  "input": "\n(define (unique-paths m n)\n  (for/product ([x (in-range n (+ m (- n 1)))]\n                [y (in-range 1 m)])\n    (/ x y)))",
+  "expected": "\n(define (unique-paths m n)\n  (for/product ([x (in-range n (+ m (- n 1)))]\n                [y (in-range 1 m)])\n    (* x y)))",
   "probe": "(unique-paths 3 7)",
   "source": {
     "repo": "https://github.com/s-cerevisiae/leetcode-racket",

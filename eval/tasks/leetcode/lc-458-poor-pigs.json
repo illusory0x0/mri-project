@@ -3,8 +3,8 @@
   "locate": "explicit",
   "operation": "replace-node",
   "instruction": "In poor-pigs the per-pig base is one too small. Use (+ 2 ...) instead of (+ 1 ...).",
-  "input": "\n(define (poor-pigs buckets minutesToDie minutesToTest)\n  (exact-ceiling (log buckets (+ 2 (/ minutesToTest minutesToDie)))))",
-  "expected": "\n(define (poor-pigs buckets minutesToDie minutesToTest)\n  (exact-ceiling (log buckets (+ 1 (/ minutesToTest minutesToDie)))))",
+  "input": "\n(define (poor-pigs buckets minutesToDie minutesToTest)\n  (exact-ceiling (log buckets (+ 1 (/ minutesToTest minutesToDie)))))",
+  "expected": "\n(define (poor-pigs buckets minutesToDie minutesToTest)\n  (exact-ceiling (log buckets (+ 2 (/ minutesToTest minutesToDie)))))",
   "probe": "(poor-pigs 1000 15 60)",
   "source": {
     "repo": "https://github.com/s-cerevisiae/leetcode-racket",
