@@ -14,26 +14,26 @@ pnpm install    # install dependencies
 just build      # compile `src/`, `eval/`, `test/` to `dist/`
 just typecheck  # `tsc --noEmit` plus the DOM client project
 just test       # build, then run the Node test suite
-just eval ...   # eval harness; extra args go to run.js
-just report     # write the HTML report
-just summary    # write a compact snapshot to eval/summaries/
 just            # list all recipes
 ```
 
-Eval credentials live in a git-ignored `.env` (`OPENAI_BASE_URL`,
-`OPENAI_API_KEY`); `just` auto-loads it (`set dotenv-load`) and the openai
-driver falls back to those variables, so only `--model` is required:
+### lisp-editor
+
+The `lisp-editor` binary is built from `src/cli.ts`. It reads Lisp source from
+stdin or `--file` and performs structural edits on the AST. It does not read
+environment variables; all configuration is passed via command-line arguments.
+Run `lisp-editor --help` for usage.
+
+### Eval harness
 
 ```sh
-just eval --driver openai --model <model>
+just eval ...   # eval harness; extra args go to run.js
+just report     # write the HTML report
+just summary    # write a compact snapshot to eval/summaries/
 ```
 
-Explicit `--base-url` / `--api-key` / `--model` flags override the environment,
-and `OPENAI_MODEL` is also honoured. Outside `just`, load the file with
-`dotenv -e .env -- <command>`.
-
-Add `--repeats N` to run each task × arm N times. Run
-`node dist/eval/run.js -h` for the full flag list.
+Credentials, flag precedence, `--repeats`, and running outside `just` are
+documented in [`docs/eval.md`](docs/eval.md).
 
 The test suite shells out to `racket` (the scorer) and GNU `patch` (the diff
 seam); both must be on `PATH`.
