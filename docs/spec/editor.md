@@ -114,6 +114,9 @@ each invocation.
 `match` and `for/*` get no shape: they parse, copy, move, insert, and delete like
 any other list, but cannot be constructed from a skeleton.
 
+The agent-facing `lisp_editor` tool description's shape list is generated from
+`SHAPES` in `src/ops.ts`, so it cannot drift from the editor.
+
 There is no free-text `--text` mode and no atomic `wrap`/transform verb. `replace`
 discards the node at `--out`, so wrapping a node in a new form requires copying it
 out first (`replace --in <path> --out <tmp>`), or rebuilding the form around it,

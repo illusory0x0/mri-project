@@ -33,7 +33,7 @@ function printAtom(node: AtomNode): string {
   return node.value;
 }
 
-function printFlat(node: Node): string {
+export function printFlat(node: Node): string {
   if (node.type === "atom") return printAtom(node);
   return "(" + node.items.map(printFlat).join(" ") + ")";
 }

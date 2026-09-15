@@ -70,3 +70,11 @@ depends on Racket's reader (and on how much of `racket` the scorer must load, se
 ADR 0009). This is deliberately low-priority: the cost is high (agents are
 unfamiliar with a new language, and teaching it in the system prompt consumes
 tokens), so it is recorded as a direction, not committed work.
+
+## Prompt note: tool shape list is generated
+
+The `lisp_editor` tool description's shape list is now generated from the
+editor's `SHAPES` catalogue (`src/ops.ts`), not hand-written in the description.
+Existing committed snapshots are historical: they predate the generation and
+remain valid; the generated list is byte-identical to the hand-written one, so
+no re-run is required.

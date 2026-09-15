@@ -1,13 +1,16 @@
 export type LocateDifficulty = "explicit" | "described";
 
-export type ConstructKind = "atom" | "wrap" | "build" | "copy" | "multi";
+export const CONSTRUCT_KINDS = ["atom", "wrap", "build", "copy", "multi"] as const;
+export type ConstructKind = (typeof CONSTRUCT_KINDS)[number];
 
-export type OperationKind =
-  | "replace-node"
-  | "insert-node"
-  | "delete-node"
-  | "wrap-node"
-  | "move-subtree";
+export const OPERATION_KINDS = [
+  "replace-node",
+  "insert-node",
+  "delete-node",
+  "wrap-node",
+  "move-subtree",
+] as const;
+export type OperationKind = (typeof OPERATION_KINDS)[number];
 
 export interface TaskSource {
   repo: string;
@@ -33,9 +36,8 @@ export interface Task {
 
 export type LoadedTask = Task & { depth: number; set: string };
 
-export type ArmName = "direct" | "ast-edit" | "text-edit" | "diff";
-
-export const ARM_NAMES: ArmName[] = ["direct", "ast-edit", "text-edit", "diff"];
+export const ARM_NAMES = ["direct", "ast-edit", "text-edit", "diff"] as const;
+export type ArmName = (typeof ARM_NAMES)[number];
 
 export interface Workspace {
   source: string;

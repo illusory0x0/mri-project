@@ -1,6 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { withDepth } from "./depth.js";
+import { parseSharedPaths } from "./flags.js";
 import {
   loadArms,
   loadJsonDir,
@@ -201,25 +202,16 @@ function orderedArms(runs: RunResult[]): string[] {
 
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
-  let resultsDir = path.resolve(process.cwd(), "eval/results");
-  let tasksDir = path.resolve(process.cwd(), "eval/tasks");
-  let armsDir = path.resolve(process.cwd(), "eval/arms");
-  let outFile = path.resolve(process.cwd(), "eval/report.html");
-  for (let i = 0; i < argv.length; i++) {
-    const flag = argv[i];
-    if (flag === "--results" || flag === "--tasks" || flag === "--arms" || flag === "--out") {
-      const value = argv[++i];
-      if (value === undefined) throw new Error(`missing value for ${flag}`);
-      if (flag === "--results") resultsDir = path.resolve(value);
-      if (flag === "--tasks") tasksDir = path.resolve(value);
-      if (flag === "--arms") armsDir = path.resolve(value);
-      if (flag === "--out") outFile = path.resolve(value);
-    } else {
-      throw new Error(`unknown option: ${flag}`);
-    }
+  const { paths, rest } = parseSharedPaths(argv, {
+    cwd: process.cwd(),
+    outDefault: "eval/report.html",
+  });
+  if (rest.length > 0) {
+    throw new Error(`unknown option: ${rest[0]}`);
   }
+  const { resultsDir, tasksDir, armsDir, outDir: outFile } = paths;
 
-  const runs = await loadJsonDir<RunResult>(resultsDir, (name) => name !== "summary.json");
+  const runs = await loadJsonDir<RunResult>(resultsDir);
   const allTasks = await loadTasks(tasksDir);
   const armDefs = await loadArms(armsDir);
   const tasksById = new Map(allTasks.map((task) => [task.id, task]));

@@ -2,6 +2,7 @@ import { mkdtemp, readdir, readFile, rm, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 import { withDepth } from "./depth.js";
+import { computeRunMetrics } from "./metrics.js";
 import { applyPatch } from "./patch.js";
 import { runProcess } from "./process.js";
 import { scoreArtifact } from "./scorer.js";
@@ -22,6 +23,7 @@ import {
   ToolSpec,
   Workspace,
 } from "./types.js";
+import { decodeToolCall } from "./wire.js";
 
 const CLI = path.resolve(process.cwd(), "dist/src/cli.js");
 const DEFAULT_TIMEOUT_MS = 180_000;
@@ -59,33 +61,32 @@ export function buildToolContext(
 ): ToolContext {
   return {
     async exec(name, input) {
-      if (name === "lisp_editor") {
-        const args = (input as { args?: unknown }).args;
-        if (!Array.isArray(args) || args.some((a) => typeof a !== "string")) {
-          return JSON.stringify({ ok: false, error: "args must be strings" });
+      const call = decodeToolCall(name, input);
+      switch (call.kind) {
+        case "lisp_editor": {
+          const result = await runProcess(
+            process.execPath,
+            [CLI, ...call.args],
+            { input: workspace.source, signal }
+          );
+          if (result.code !== 0) {
+            return JSON.stringify({ ok: false, error: result.stderr.trim() });
+          }
+          if (
+            call.args[0] === "replace" ||
+            call.args[0] === "delete" ||
+            call.args[0] === "insert"
+          ) {
+            workspace.source = result.stdout;
+            return JSON.stringify({ ok: true, source: result.stdout });
+          }
+          return JSON.stringify({ ok: true, output: result.stdout });
         }
-        const result = await runProcess(
-          process.execPath,
-          [CLI, ...(args as string[])],
-          { input: workspace.source, signal }
-        );
-        if (result.code !== 0) {
-          return JSON.stringify({ ok: false, error: result.stderr.trim() });
-        }
-        if (args[0] === "replace" || args[0] === "delete" || args[0] === "insert") {
-          workspace.source = result.stdout;
-          return JSON.stringify({ ok: true, source: result.stdout });
-        }
-        return JSON.stringify({ ok: true, output: result.stdout });
+        case "shell":
+          return execShell(call.command, workspace, signal);
+        case "invalid":
+          return JSON.stringify({ ok: false, error: call.reason });
       }
-      if (name === "shell") {
-        const command = (input as { command?: unknown }).command;
-        if (typeof command !== "string") {
-          return JSON.stringify({ ok: false, error: "command must be a string" });
-        }
-        return execShell(command, workspace, signal);
-      }
-      return JSON.stringify({ ok: false, error: `unknown tool: ${name}` });
     },
   };
 }
@@ -326,23 +327,13 @@ export function summarize(results: RunResult[]): ArmSummary[] {
   return ARM_NAMES.map((arm): ArmSummary => {
     const subset = results.filter((result) => result.arm === arm);
     const denominator = subset.length || 1;
-    const mean = (select: (result: RunResult) => number): number =>
-      subset.length === 0
-        ? 0
-        : subset.reduce((sum, result) => sum + select(result), 0) /
-          subset.length;
     const withProbe = subset.filter(
       (result) => result.semantic !== null && result.semantic !== undefined
     );
-    const scored = withProbe.filter((result) => result.semantic !== "unknown");
-    const semanticRate =
-      scored.length > 0
-        ? scored.filter((result) => result.semantic === "equal").length /
-          scored.length
-        : 0;
+    const { totalTokens: _drop, ...metrics } = computeRunMetrics(subset);
     return {
       arm,
-      runs: subset.length,
+      ...metrics,
       parseErrorRate:
         subset.filter((result) => !result.parsed && !result.hunkFailure).length /
         denominator,
@@ -350,16 +341,8 @@ export function summarize(results: RunResult[]): ArmSummary[] {
         subset.filter((result) => result.parenMismatch).length / denominator,
       hunkFailureRate:
         subset.filter((result) => result.hunkFailure).length / denominator,
-      successRate:
-        subset.filter((result) => result.success).length / denominator,
-      structuralRate:
-        subset.filter((result) => result.structural).length / denominator,
-      semanticRate,
-      semanticScored: scored.length,
       semanticUnknown: withProbe.filter((result) => result.semantic === "unknown")
         .length,
-      meanSteps: mean((result) => result.steps),
-      meanTokens: mean((result) => result.tokens),
     };
   }).filter((summary) => summary.runs > 0);
 }

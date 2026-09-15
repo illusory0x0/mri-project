@@ -18,7 +18,7 @@ const SYMBOL = (value: string): AtomNode => ({
 
 const LIST = (items: Node[]): ListNode => ({ type: "list", items });
 
-const SHAPES: Record<string, Node> = {
+export const SHAPES: Record<string, Node> = {
   lambda: LIST([SYMBOL("lambda"), LIST([SYMBOL("_param")]), SYMBOL("_body")]),
   if: LIST([SYMBOL("if"), SYMBOL("_cond"), SYMBOL("_then"), SYMBOL("_else")]),
   define: LIST([SYMBOL("define"), SYMBOL("_name"), SYMBOL("_body")]),

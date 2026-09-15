@@ -8,6 +8,7 @@ import type {
   SemanticVerdict,
   Task,
 } from "./types.js";
+import { decodeToolCall, describeToolCall } from "./wire.js";
 
 interface TranscriptMessage {
   role?: string;
@@ -87,15 +88,7 @@ function parseJsonish(s: string | null | undefined): unknown {
   }
 }
 function commandOf(name: string | undefined, raw: string | null | undefined): string {
-  const o = parseJsonish(raw);
-  if (o && typeof o === "object") {
-    const obj = o as { args?: unknown; command?: unknown };
-    if (name === "lisp_editor" && Array.isArray(obj.args)) {
-      return "lisp-editor " + obj.args.join(" ");
-    }
-    if (name === "shell" && typeof obj.command === "string") return obj.command;
-  }
-  return raw == null ? "" : String(raw);
+  return describeToolCall(decodeToolCall(name, raw));
 }
 
 function el(tag: string, cls?: string | null, text?: unknown): HTMLElement {

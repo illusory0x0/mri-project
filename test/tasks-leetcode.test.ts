@@ -3,15 +3,7 @@ import { test } from "node:test";
 import path from "node:path";
 import { loadTasks } from "../eval/runner.js";
 import { scoreArtifact } from "../eval/scorer.js";
-import { OperationKind } from "../eval/types.js";
-
-const OPERATIONS: OperationKind[] = [
-  "replace-node",
-  "insert-node",
-  "delete-node",
-  "wrap-node",
-  "move-subtree",
-];
+import { OPERATION_KINDS, OperationKind } from "../eval/types.js";
 
 const tasks = await loadTasks(path.resolve(process.cwd(), "eval/tasks/leetcode"));
 
@@ -20,7 +12,7 @@ test("corpus tasks: every task carries provenance and an operation", () => {
   for (const task of tasks) {
     assert.equal(task.construct, undefined, `${task.id} uses operation, not construct`);
     assert.ok(
-      OPERATIONS.includes(task.operation as OperationKind),
+      OPERATION_KINDS.includes(task.operation as OperationKind),
       `${task.id} has a known operation`
     );
     assert.ok(task.source, `${task.id} has a source`);

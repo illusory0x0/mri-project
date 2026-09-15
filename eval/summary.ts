@@ -3,15 +3,20 @@ import { createHash } from "node:crypto";
 import { mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseSharedPaths } from "./flags.js";
 import { loadJsonDir, loadTasks, summarizeBracketDanger, summarizeBySet, summarizeHeadline } from "./runner.js";
+import { computeRunMetrics } from "./metrics.js";
 import { modalVerdict } from "./verdict.js";
 import {
+  ARM_NAMES,
   ArmName,
   BatchingStat,
   CellSummary,
+  CONSTRUCT_KINDS,
   ConstructKind,
   ConstructSummary,
   LocateDifficulty,
+  OPERATION_KINDS,
   OperationKind,
   OperationSummary,
   RunResult,
@@ -24,21 +29,8 @@ import {
   TaskSetRef,
 } from "./types.js";
 
-const ARM_ORDER: ArmName[] = ["direct", "ast-edit", "text-edit", "diff"];
-const CONSTRUCT_ORDER: ConstructKind[] = [
-  "atom",
-  "wrap",
-  "build",
-  "copy",
-  "multi",
-];
-const OPERATION_ORDER: OperationKind[] = [
-  "replace-node",
-  "insert-node",
-  "delete-node",
-  "wrap-node",
-  "move-subtree",
-];
+const CONSTRUCT_ORDER: readonly ConstructKind[] = CONSTRUCT_KINDS;
+const OPERATION_ORDER: readonly OperationKind[] = OPERATION_KINDS;
 
 function sha256(parts: Array<string | Buffer>): string {
   const hash = createHash("sha256");
@@ -151,14 +143,8 @@ export async function collectProvenance(
   };
 }
 
-function mean(values: number[]): number {
-  return values.length === 0
-    ? 0
-    : values.reduce((sum, value) => sum + value, 0) / values.length;
-}
-
 export function computeBatching(runs: RunResult[]): BatchingStat[] {
-  return ARM_ORDER.map((arm): BatchingStat => {
+  return ARM_NAMES.map((arm): BatchingStat => {
     const subset = runs.filter((run) => run.arm === arm);
     let assistantTurns = 0;
     let toolTurns = 0;
@@ -187,32 +173,13 @@ export function computeBatching(runs: RunResult[]): BatchingStat[] {
   }).filter((stat) => stat.assistantTurns > 0);
 }
 
-function summarizeRuns(arm: ArmName, results: RunResult[]) {
-  const scored = results.filter(
-    (result) => result.semantic !== null && result.semantic !== "unknown"
-  );
-  return {
-    runs: results.length,
-    successRate: mean(results.map((result) => (result.success ? 1 : 0))),
-    structuralRate: mean(results.map((result) => (result.structural ? 1 : 0))),
-    semanticRate:
-      scored.length === 0
-        ? 0
-        : mean(scored.map((result) => (result.semantic === "equal" ? 1 : 0))),
-    semanticScored: scored.length,
-    meanSteps: mean(results.map((result) => result.steps)),
-    meanTokens: mean(results.map((result) => result.tokens)),
-    totalTokens: results.reduce((sum, result) => sum + result.tokens, 0),
-  };
-}
-
 function summarizeConstruct(
   arm: ArmName,
   set: string,
   construct: ConstructKind,
   results: RunResult[]
 ): ConstructSummary {
-  return { arm, set, construct, ...summarizeRuns(arm, results) };
+  return { arm, set, construct, ...computeRunMetrics(results) };
 }
 
 function summarizeOperation(
@@ -221,7 +188,7 @@ function summarizeOperation(
   operation: OperationKind,
   results: RunResult[]
 ): OperationSummary {
-  return { arm, set, operation, ...summarizeRuns(arm, results) };
+  return { arm, set, operation, ...computeRunMetrics(results) };
 }
 
 export function computeStability(
@@ -309,7 +276,7 @@ export function buildSnapshot(
   const LOCATES: LocateDifficulty[] = ["explicit", "described"];
   const sets = [...new Set(tasks.map((task) => task.set ?? "unknown"))].sort();
   for (const set of sets) {
-    for (const arm of ARM_ORDER) {
+    for (const arm of ARM_NAMES) {
       const inSet = (run: RunResult): boolean =>
         run.arm === arm &&
         (tasksById.get(run.taskId)?.set ?? "unknown") === set;
@@ -380,34 +347,16 @@ async function main(): Promise<void> {
     process.stdout.write(USAGE);
     return;
   }
-  const cwd = process.cwd();
-  let resultsDir = path.resolve(cwd, "eval/results");
-  let tasksDir = path.resolve(cwd, "eval/tasks");
-  let armsDir = path.resolve(cwd, "eval/arms");
-  let outDir = path.resolve(cwd, "eval/summaries");
-  for (let i = 0; i < argv.length; i++) {
-    const flag = argv[i];
-    if (
-      flag === "--results" ||
-      flag === "--tasks" ||
-      flag === "--arms" ||
-      flag === "--out"
-    ) {
-      const value = argv[++i];
-      if (value === undefined) throw new Error(`missing value for ${flag}`);
-      if (flag === "--results") resultsDir = path.resolve(value);
-      if (flag === "--tasks") tasksDir = path.resolve(value);
-      if (flag === "--arms") armsDir = path.resolve(value);
-      if (flag === "--out") outDir = path.resolve(value);
-    } else {
-      throw new Error(`unknown option: ${flag}\n\n${USAGE}`);
-    }
+  const { paths, rest } = parseSharedPaths(argv, {
+    cwd: process.cwd(),
+    outDefault: "eval/summaries",
+  });
+  if (rest.length > 0) {
+    throw new Error(`unknown option: ${rest[0]}\n\n${USAGE}`);
   }
+  const { resultsDir, tasksDir, armsDir, outDir } = paths;
 
-  const runs = await loadJsonDir<RunResult>(
-    resultsDir,
-    (name) => name !== "summary.json"
-  );
+  const runs = await loadJsonDir<RunResult>(resultsDir);
   if (runs.length === 0) {
     throw new Error(`no runs found in ${resultsDir}`);
   }

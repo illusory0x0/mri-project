@@ -10,8 +10,6 @@ import {
   resultFileName,
   runOne,
   selectTasks,
-  summarizeBracketDanger,
-  summarizeHeadline,
 } from "./runner.js";
 import { AgentDriver } from "./types.js";
 
@@ -79,17 +77,6 @@ async function main(): Promise<void> {
     }
   );
 
-  await writeFile(
-    path.join(options.out, "summary.json"),
-    JSON.stringify(
-      {
-        arms: summarizeHeadline(results, tasks),
-        bracketDanger: summarizeBracketDanger(results, tasks),
-      },
-      null,
-      2
-    )
-  );
   process.stdout.write(`\nwrote ${results.length} runs to ${options.out}\n`);
 }
 
