@@ -1,20 +1,45 @@
 ---
 name: ask-me
-description: Force decisions from the conversation alone. No codebase reads, no sub-agent lookups: every fact is the user's to supply. Use for fast prompts where the decision doesn't hinge on code facts.
+description: Force decisions from the conversation alone; every fact is the user's to supply.
 disable-model-invocation: true
 ---
 
-Call the Skill tool with "grilling".
+Interview the user relentlessly until you reach a shared understanding. Map this
+as a **design tree**: every decision branches into the decisions that hang off it.
 
-This is the **no-lookup** variant. `/grilling` makes finding facts the agent's
-job; here it is the user's. Never read the codebase, the environment, or
-dispatch a sub-agent to look anything up.
+Work the tree in **rounds**. The **frontier** is every decision whose prerequisites
+are already settled: the questions you can ask _now_ without guessing at answers
+you haven't heard yet. Ask the whole frontier in one round: number each question
+and give your recommended answer. Then wait for the user's answers before the next
+round.
 
-When a frontier question needs a fact:
+Format a round like so:
 
-- ask the user for it directly, in the same round;
-- if they don't have it, mark that decision **blocked** and push the questions
-  that depend on it to a later round.
+```
+❓ **Q1** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
 
-Nothing is looked up; nothing is assumed. The decisions are the user's, and so
-are the facts they rest on.
+➡️ <your recommended answer>
+
+---
+
+❓ **Q2** - **<question title>**: <question body, might be multiple paragraphs, including multiple choices>
+
+➡️ <your recommended answer>
+```
+
+Each round the user answers reshapes the tree: settled decisions push the frontier
+outward and unblock questions that depended on them. Recompute the frontier and ask
+the next round. A question whose answer depends on another question still open in
+this round belongs to a _later_ round, not this one.
+
+Facts are the user's to supply, never yours. When a frontier question needs a fact,
+ask the user for it directly, in the same round, using the same `❓` format. If they
+don't have it, mark that decision **blocked** and push the questions that depend on
+it to a later round.
+
+A blocked decision is an explicit open item, never a silent assumption. Carry every
+still-blocked decision to the end and surface it when the session closes.
+
+The session is done when the frontier is empty: every branch of the design tree
+visited, nothing left silently assumed. Do not act on it until the user confirms you
+have reached a shared understanding.
